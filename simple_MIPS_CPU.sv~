@@ -1,0 +1,19 @@
+module simple_MIPS_CPU(
+		       input logic clk,
+		       input logic rst_n,
+		       input logic[31:0] instruction,
+		       input logic[31:0] data_mem_rd_data,
+		       output logic[31:0] inst_mem_rd_addr,
+		       output logic[31:0] data_mem_addr,
+		       output logic[31:0] data_mem_wrdata,
+		       output logic mem_write_ctrl
+		       );
+
+
+   //**********Declarations*************//
+   
+   //***********************************//
+
+
+
+endmodule // simple_MIPS_CPU

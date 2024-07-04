@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system name="$${FILENAME}">
+ <component
+   name="$${FILENAME}"
+   displayName="$${FILENAME}"
+   version="1.0"
+   description=""
+   tags="INTERNAL_COMPONENT=true"
+   categories="" />
+ <parameter name="bonusData"><![CDATA[bonusData 
+{
+   element vic_0
+   {
+      datum _sortIndex
+      {
+         value = "0";
+         type = "int";
+      }
+   }
+}
+]]></parameter>
+ <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
+ <parameter name="device" value="5CSEBA6U23I7" />
+ <parameter name="deviceFamily" value="Cyclone V" />
+ <parameter name="deviceSpeedGrade" value="7" />
+ <parameter name="fabricMode" value="QSYS" />
+ <parameter name="generateLegacySim" value="false" />
+ <parameter name="generationId" value="0" />
+ <parameter name="globalResetBus" value="false" />
+ <parameter name="hdlLanguage" value="VERILOG" />
+ <parameter name="hideFromIPCatalog" value="true" />
+ <parameter name="lockedInterfaceDefinition" value="" />
+ <parameter name="maxAdditionalLatency" value="1" />
+ <parameter name="projectName" value="" />
+ <parameter name="sopcBorderPoints" value="false" />
+ <parameter name="systemHash" value="0" />
+ <parameter name="testBenchDutName" value="" />
+ <parameter name="timeStamp" value="0" />
+ <parameter name="useTestBenchNamingPattern" value="false" />
+ <instanceScript></instanceScript>
+ <interface name="clk" internal="vic_0.clk" type="clock" dir="end">
+  <port name="clk_clk" internal="clk_clk" />
+ </interface>
+ <interface name="csr_access" internal="vic_0.csr_access" type="avalon" dir="end">
+  <port name="csr_access_read" internal="csr_access_read" />
+  <port name="csr_access_write" internal="csr_access_write" />
+  <port name="csr_access_address" internal="csr_access_address" />
+  <port name="csr_access_writedata" internal="csr_access_writedata" />
+  <port name="csr_access_readdata" internal="csr_access_readdata" />
+ </interface>
+ <interface
+   name="interrupt_controller_out"
+   internal="vic_0.interrupt_controller_out"
+   type="avalon_streaming"
+   dir="start">
+  <port
+     name="interrupt_controller_out_valid"
+     internal="interrupt_controller_out_valid" />
+  <port
+     name="interrupt_controller_out_data"
+     internal="interrupt_controller_out_data" />
+ </interface>
+ <interface
+   name="irq_input"
+   internal="vic_0.irq_input"
+   type="interrupt"
+   dir="start">
+  <port name="irq_input_irq" internal="irq_input_irq" />
+ </interface>
+ <interface name="reset" internal="vic_0.reset" type="reset" dir="end">
+  <port name="reset_reset" internal="reset_reset" />
+ </interface>
+ <module
+   name="vic_0"
+   kind="altera_vic"
+   version="21.1"
+   enabled="1"
+   autoexport="1">
+  <parameter name="AUTO_DEVICE" value="5CSEBA6U23I7" />
+  <parameter name="AUTO_DEVICE_FAMILY" value="Cyclone V" />
+  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="7" />
+  <parameter name="DAISY_CHAIN_ENABLE" value="0" />
+  <parameter name="INTERRUPT_LATENCY_CYCLES" value="2" />
+  <parameter name="NUMBER_OF_INT_PORTS" value="8" />
+  <parameter name="OVERRIDE_INTERRUPT_LATENCY" value="false" />
+  <parameter name="RIL_WIDTH" value="4" />
+ </module>
+ <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
+ <interconnectRequirement for="$system" name="qsys_mm.enableEccProtection" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
+ <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
+</system>
