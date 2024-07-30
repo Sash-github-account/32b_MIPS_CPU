@@ -1,5 +1,6 @@
 module cpu_main_ctrl(
 		     input logic [5:0] 	instruction_opcode,
+		     input 		hazard_detected,
 		     output logic [1:0] aluop_ctrl,
 		     output logic 	regdst_ctrl,
 		     output logic 	jump_ctrl,
@@ -11,8 +12,13 @@ module cpu_main_ctrl(
 		     output logic 	regwrite_ctrl
 		     );
 
-
+   //***** Wires ******//
+   logic [5:0] 				instruction_opcode_hz_passed;
+   //***** Wires ******//
+   
    //*************** Main control logic ************//
+   assign instruction_opcode_hz_passed = (hazard_detected)? 6'b111111 : instruction_opcode;
+   
    always@(*) begin
       //*****Defaults*****//
       aluop_ctrl = 2'b00;
@@ -26,7 +32,7 @@ module cpu_main_ctrl(
       regwrite_ctrl = 0;
       //******************//
       
-      case(instruction_opcode)
+      case(instruction_opcode_hz_passed)
 	6'b000000: begin
 	   regdst_ctrl = 1;
 	   regwrite_ctrl = 1;
@@ -34,7 +40,7 @@ module cpu_main_ctrl(
 	end
 	
         6'b000010: begin
-          jump_ctrl = 1;
+           jump_ctrl = 1;
         end
 
 	6'b100011: begin
@@ -71,4 +77,4 @@ module cpu_main_ctrl(
 
 endmodule // cpu_main_ctrl
 
-   
+

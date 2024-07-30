@@ -92,7 +92,7 @@ module registers1(
    always_comb begin
       read_data_2 = 32'h0;
       
-      case(read_register_1)
+      case(read_register_2)
 	0: begin read_data_2 = register_0  ; end
 	1: begin read_data_2 = register_1   ; end
 	2: begin read_data_2 = register_2   ; end
@@ -136,13 +136,13 @@ module registers1(
    //********* Register file seq logic*************//
    always@(posedge clk) begin
       if(!rst_n) begin 
-	 register_0 <= 32'd6; 
-	 register_1 <= 32'h06; 
-	 register_2 <= 32'h06; 
-	 register_3 <= 32'h06; 
-	 register_4 <= 32'h06; 
-	 register_5 <= 32'h06; 
-	 register_6 <= 32'h06; 
+	 register_0 <= 32'd0; 
+	 register_1 <= 32'h00; 
+	 register_2 <= 32'h00; 
+	 register_3 <= 32'h00; 
+	 register_4 <= 32'h00; 
+	 register_5 <= 32'h00; 
+	 register_6 <= 32'h00; 
 	 register_7 <= 32'h0; 
 	 register_8 <= 32'h0; 
 	 register_9 <= 32'h0; 

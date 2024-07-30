@@ -55,7 +55,7 @@ module simple_MIPS_CPU(
 	
    //************Instantiations*********//
 
-   pc i_pc(
+   pc_non_pipe i_pc(
 	   .clk(clk),
 	   .rst_n(rst_n),
 	   .instruction_jmp_imm(instruction[25:0]),
