@@ -35,9 +35,9 @@ module forwarding_unit(
    //**********************//
 
    //******** MEM hazard *********//
-   assign fwd_a_b_01_cmn_lgc = (MEMWB_regwrite_ctrl) & (MEMWB_reg_rd != 0) & !(EXMEM_regwrite_ctrl & (EXMEM_reg_rd != 0));
-   assign set_fwd_a_01 = (fwd_a_b_01_cmn_lgc) & (EXMEM_reg_rd != IDEX_reg_rs) & (MEMWB_reg_rd == IDEX_reg_rs);
-   assign set_fwd_b_01 = (fwd_a_b_01_cmn_lgc) & (EXMEM_reg_rd != IDEX_reg_rt) & (MEMWB_reg_rd == IDEX_reg_rt);
+   assign fwd_a_b_01_cmn_lgc = (MEMWB_regwrite_ctrl) & (MEMWB_reg_rd != 0);
+   assign set_fwd_a_01 = (fwd_a_b_01_cmn_lgc)  & !(EXMEM_regwrite_ctrl & (EXMEM_reg_rd != 0) & (EXMEM_reg_rd != IDEX_reg_rs)) & (MEMWB_reg_rd == IDEX_reg_rs);
+   assign set_fwd_b_01 = (fwd_a_b_01_cmn_lgc)  & !(EXMEM_regwrite_ctrl & (EXMEM_reg_rd != 0) & (EXMEM_reg_rd != IDEX_reg_rt)) & (MEMWB_reg_rd == IDEX_reg_rt);
    //*****************************//
 
    //********* forwarding control outputs *********//
