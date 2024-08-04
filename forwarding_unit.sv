@@ -24,6 +24,8 @@ module forwarding_unit(
    logic 				 set_fwd_b_01;
    logic [1:0] 				 forward_a;
    logic [1:0] 				 forward_b;
+   logic 				 mem_stg_exclusions_rs;
+   
    //********** wires *********//
 
 
@@ -32,12 +34,14 @@ module forwarding_unit(
    assign fwd_a_b_10_cmn_lgc = (EXMEM_regwrite_ctrl) & (EXMEM_reg_rd != 0);
    assign set_fwd_a_10 = fwd_a_b_10_cmn_lgc & (EXMEM_reg_rd == IDEX_reg_rs);
    assign set_fwd_b_10 = fwd_a_b_10_cmn_lgc & (EXMEM_reg_rd == IDEX_reg_rt);
+   assign mem_stg_exclusions_rs = !(set_fwd_a_10);
+   assign mem_stg_exclusions_rt = !(set_fwd_b_10);   
    //**********************//
 
    //******** MEM hazard *********//
    assign fwd_a_b_01_cmn_lgc = (MEMWB_regwrite_ctrl) & (MEMWB_reg_rd != 0);
-   assign set_fwd_a_01 = (fwd_a_b_01_cmn_lgc)  & !(EXMEM_regwrite_ctrl & (EXMEM_reg_rd != 0) & (EXMEM_reg_rd != IDEX_reg_rs)) & (MEMWB_reg_rd == IDEX_reg_rs);
-   assign set_fwd_b_01 = (fwd_a_b_01_cmn_lgc)  & !(EXMEM_regwrite_ctrl & (EXMEM_reg_rd != 0) & (EXMEM_reg_rd != IDEX_reg_rt)) & (MEMWB_reg_rd == IDEX_reg_rt);
+   assign set_fwd_a_01 = (fwd_a_b_01_cmn_lgc)  & mem_stg_exclusions_rs & (MEMWB_reg_rd == IDEX_reg_rs);
+   assign set_fwd_b_01 = (fwd_a_b_01_cmn_lgc)  & mem_stg_exclusions_rt & (MEMWB_reg_rd == IDEX_reg_rt);
    //*****************************//
 
    //********* forwarding control outputs *********//
@@ -45,16 +49,6 @@ module forwarding_unit(
       // Defaults //
       forward_a = 2'b00;
       forward_b = 2'b00;
-      // Forward 'a' control generation //
-      if(set_fwd_a_10) begin
-	 forward_a = 2'b10;
-      end
-      else if(set_fwd_a_01) begin
-	 forward_a = 2'b01;
-      end
-      else begin
-	 forward_a = 2'b00;
-      end
       // Forward 'b' control generation //
       if(set_fwd_b_10) begin
 	 forward_b = 2'b10;
@@ -64,7 +58,18 @@ module forwarding_unit(
       end
       else begin
 	 forward_b = 2'b00;
+      end 
+     // Forward 'a' control generation //
+      if(set_fwd_a_10) begin
+	 forward_a = 2'b10;
       end
+      else if(set_fwd_a_01) begin
+	 forward_a = 2'b01;
+      end
+      else begin
+	 forward_a = 2'b00;
+      end
+
    end
    //********* forwarding control outputs *********// 
    

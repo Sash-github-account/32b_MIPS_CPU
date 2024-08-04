@@ -25,6 +25,8 @@ module CPU_MIPS_32b_5stage(
    logic 				      alusrc_ctrl;
    logic 				      memtoreg_ctrl;
    logic 				      regdst_ctrl; 
+   logic [31:0] 			      read_data_1_discon;
+   logic [31:0] 			      read_data_2_discon;
    logic [31:0] 			      read_data_1;
    logic [31:0] 			      read_data_2;
    logic [31:0] 			      read_data_1_in_to_alu;
@@ -81,13 +83,14 @@ module CPU_MIPS_32b_5stage(
 	 pc_plus_4_to_IDEX_pipe <= 32'h0;
       end
       else begin
+      pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IFID_pipe;
 	 if(!hazard_detected) begin
             instruction <= instruction_i;
-	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IFID_pipe;
+	    
 	 end
 	 else begin
             instruction <= instruction;
-	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
+	    //pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
 	 end
       end
    end
@@ -118,10 +121,13 @@ module CPU_MIPS_32b_5stage(
    assign reg_rs_from_IDEX = instruction_25_21;
    assign reg_rd_from_IDEX = instruction_15_11;
    assign reg_rt_from_IDEX = instruction_20_16;
-   
+ 
+   assign read_data_1_discon = 0;
+   assign read_data_2_discon = 0;
+  
    always_ff@(posedge clk)begin
       if(!rst_n)begin
-	 read_data_1<= 32'b0;
+	 read_data_1 <= 32'b0;
 	 read_data_2 <= 32'b0;
 	 aluop_ctrl <= 32'b0;
 	 regdst_ctrl<= 32'b0;  
@@ -236,7 +242,7 @@ module CPU_MIPS_32b_5stage(
    logic [31:0] 	     br_instr_offset_sign_extdt_shft_l_2;
    logic [31:0] 	     branch_address_to_EXMEM_pipe;
    assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd << 2;
-   assign branch_address_to_EXMEM_pipe = pc_plus_4 + br_instr_offset_sign_extdt_shft_l_2; // FIXME: should this be sub?
+   assign branch_address_to_EXMEM_pipe = pc_plus_4 + br_instr_offset_sign_extdt_shft_l_2;
 
 
    forwarding_unit i_forwarding_unit(
@@ -255,6 +261,8 @@ module CPU_MIPS_32b_5stage(
 				     );
 
    hazard_detection_unit i_hazard_detection_unit(
+						 .clk(clk),
+						 .rst_n(rst_n),
 						 .IDEX_memread_ctrl(memread_ctrl_to_EXMEM_pipe),
 						 .IDEX_reg_rt(reg_rt_from_IDEX),
 						 .IFID_reg_rs(instruction[25:21]),
@@ -277,7 +285,7 @@ module CPU_MIPS_32b_5stage(
 	   .pc_halted(pc_halted)
 	   );
 
-   registers1 i_registers1(
+   regfile_larr i_registers1(
 			   .clk(clk),
 			   .rst_n(rst_n),
 			   .read_register_1(instruction[25:21]),
