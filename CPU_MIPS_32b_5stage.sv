@@ -82,15 +82,14 @@ module CPU_MIPS_32b_5stage(
 	 instruction <= 32'b0;
 	 pc_plus_4_to_IDEX_pipe <= 32'h0;
       end
-      else begin
-      pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IFID_pipe;
-	 if(!hazard_detected) begin
-            instruction <= instruction_i;
-	    
+      else begin      
+	 if(hazard_detected | branch_taken) begin
+            instruction <= (branch_taken) ? 32'h0 : instruction;
+	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
 	 end
 	 else begin
-            instruction <= instruction;
-	    //pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
+            instruction <= instruction_i;
+	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IFID_pipe;
 	 end
       end
    end
@@ -190,7 +189,7 @@ module CPU_MIPS_32b_5stage(
 	 alu_result_to_MEMWB_pipe <= 0;     
 	 zero_alu <= 0;       
 	 data_mem_wrdata <= 0;
-	 branch_address <= 32'h0;
+	 //branch_address <= 32'h0;
 	 write_register_in_mux_to_MEMWB_pipe <= 0;
       end
       else begin
@@ -203,7 +202,7 @@ module CPU_MIPS_32b_5stage(
 	 alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
 	 zero_alu <= zero_alu_to_EXMEM_pipe;       
 	 data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
-	 branch_address <= branch_address_to_EXMEM_pipe;
+	 //branch_address <= branch_address_to_EXMEM_pipe;
 	 write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
       end
    end
@@ -241,9 +240,10 @@ module CPU_MIPS_32b_5stage(
    // branch address calculation
    logic [31:0] 	     br_instr_offset_sign_extdt_shft_l_2;
    logic [31:0] 	     branch_address_to_EXMEM_pipe;
-   assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd << 2;
-   assign branch_address_to_EXMEM_pipe = pc_plus_4 + br_instr_offset_sign_extdt_shft_l_2;
-
+   logic cpu_ctrl_stall;
+   assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd_to_IDEX_pipe << 2;
+   assign branch_address = pc_plus_4_to_IDEX_pipe + br_instr_offset_sign_extdt_shft_l_2;
+   assign cpu_ctrl_stall = (hazard_detected );
 
    forwarding_unit i_forwarding_unit(
 				     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe	),
@@ -269,14 +269,21 @@ module CPU_MIPS_32b_5stage(
 						 .IFID_reg_rt(instruction[20:16]),
 						 .hazard_detected(hazard_detected)
 						 );
-   
+ 
+   branch_predictor_static_nt i_branch_predictor_static_nt(
+							   .reg1_val(read_data_1_to_IDEX_pipe	),
+							   .reg2_val(read_data_2_to_IDEX_pipe	),
+							   .branch_instr_detected(branch_ctrl_to_IDEX_pipe),
+							   .branch_taken(branch_taken)
+							   );
+  
    pc i_pc(
 	   .clk(clk),
 	   .rst_n(rst_n),
 	   .instruction_jmp_imm(instruction[25:0]),
 	   .hazard_detected(hazard_detected),
 	   .branch_address(branch_address),
-	   .br_ctrl_mux_sel(PCSrc),
+	   .br_ctrl_mux_sel(branch_taken),
 	   .zero_alu(zero_alu),
 	   .jump_ctrl(jump_ctrl),
 	   .final_nxt_pc_mux(),
@@ -314,7 +321,7 @@ module CPU_MIPS_32b_5stage(
    
    cpu_main_ctrl i_cpu_main_ctrl(
 				 .instruction_opcode(instruction[31:26]),
-				 .hazard_detected(hazard_detected),
+				 .hazard_detected(cpu_ctrl_stall),
 				 .aluop_ctrl(aluop_ctrl_to_IDEX_pipe),
 				 .regdst_ctrl(regdst_ctrl_to_IDEX_pipe),
 				 .jump_ctrl(jump_ctrl_to_IDEX_pipe),
