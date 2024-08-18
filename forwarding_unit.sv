@@ -25,7 +25,7 @@ module forwarding_unit(
    logic [1:0] 				 forward_a;
    logic [1:0] 				 forward_b;
    logic 				 mem_stg_exclusions_rs;
-   
+   logic 				 mem_stg_exclusions_rt;   
    //********** wires *********//
 
 

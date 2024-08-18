@@ -33,34 +33,34 @@ module cpu_main_ctrl(
       //******************//
       
       case(instruction_opcode_hz_passed)
-	6'b000000: begin
+	6'b000000: begin // R-type 
 	   regdst_ctrl = 1;
 	   regwrite_ctrl = 1;
 	   aluop_ctrl = 2'b10;
 	end
 	
-        6'b000010: begin
+        6'b000010: begin // uncond jump
            jump_ctrl = 1;
         end
 
-	6'b100011: begin
+	6'b100011: begin // load
 	   alusrc_ctrl = 1;
 	   memtoreg_ctrl = 1;
 	   regwrite_ctrl = 1;
 	   memread_ctrl =1;
 	end
 
-	6'b101011: begin
+	6'b101011: begin // store
 	   alusrc_ctrl = 1;
 	   memwrite_ctrl = 1;
 	end
 
-	6'b000100: begin
+	6'b000100: begin // branch
 	   branch_ctrl = 1;
 	   aluop_ctrl = 2'b01;
 	end
 
-	default: begin
+	default: begin // no-op
 	   aluop_ctrl = 2'b00;
 	   regdst_ctrl = 0;
 	   jump_ctrl = 0;

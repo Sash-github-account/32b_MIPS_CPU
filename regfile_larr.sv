@@ -134,7 +134,7 @@ module regfile_larr(
 
    
    //********* Register file seq logic*************//
-   always@(clk or rst_n or write_data) begin
+   always@(clk or rst_n or write_data or regwrite_ctrl or write_register) begin
       if(!rst_n) begin 
 	 register_0 <= 32'd0; 
 	 register_1 <= 32'h00; 

@@ -9,7 +9,7 @@ module CPU_MIPS_32b_5stage(
 			   input logic 	      clk,
 			   input logic 	      rst_n,
 			   output logic       memread_ctrl,
-			   output 	      inst_mem_rd_addr_to_instmem,
+			   output logic [31:0]	      inst_mem_rd_addr_to_instmem,
 			   input logic [31:0] instruction_i, 
 			   output logic [0:7] LED_o
 			   );
@@ -37,7 +37,6 @@ module CPU_MIPS_32b_5stage(
    logic [31:0] 			      data_mem_addr;
    logic [31:0] 			      data_mem_wrdata;
    logic [31:0] 			      inst_mem_rd_addr;
-   logic [31:0] 			      inst_mem_rd_addr_to_instmem;
    logic [31:0] 			      data_mem_rd_data;
    logic 				      led_load;
    logic [7:0] 				      led_data;
@@ -52,6 +51,49 @@ module CPU_MIPS_32b_5stage(
    logic [1:0] 				      forward_a;
    logic [1:0] 				      forward_b;
    logic 				      hazard_detected;
+   logic 				      branch_hazard_stall;
+   logic 				      branch_taken_IF_flush;
+   logic [4:0] 	write_register_in_mux_to_EXMEM_pipe;
+   logic [31:0] br_instr_offset_sign_extd_to_IDEX_pipe;
+   logic [31:0] data_mem_wrdata_to_EXMEM_pipe;
+   logic [31:0] 			      pc_plus_4_to_IFID_pipe;
+   logic [31:0] 			      pc_plus_4_to_IDEX_pipe;
+   logic [31:0] read_data_1_to_IDEX_pipe;
+   logic [31:0] read_data_2_to_IDEX_pipe; 
+   logic [1:0] 	aluop_ctrl_to_IDEX_pipe;
+   logic 	regdst_ctrl_to_IDEX_pipe;
+   logic 	jump_ctrl_to_IDEX_pipe;
+   logic 	branch_ctrl_to_IDEX_pipe;
+   logic 	memread_ctrl_to_IDEX_pipe;
+   logic 	memwrite_ctrl_to_IDEX_pipe;
+   logic 	memtoreg_ctrl_to_IDEX_pipe;
+   logic 	alusrc_ctrl_to_IDEX_pipe;
+   logic 	regwrite_ctrl_to_IDEX_pipe;
+   logic [4:0] 	instruction_25_21;
+   logic [4:0] 	instruction_15_11;
+   logic [4:0] 	instruction_20_16;
+   logic [4:0] 	reg_rs_from_IDEX;
+   logic [4:0] 	reg_rd_from_IDEX;
+   logic [4:0] 	reg_rt_from_IDEX;
+   logic [5:0] 	instruction_5_0; 
+   logic [31:0] pc_plus_4;
+   logic jump_ctrl_to_EXMEM_pipe    ;
+   logic branch_ctrl_to_EXMEM_pipe  ;
+   logic memread_ctrl_to_EXMEM_pipe ;
+   logic memwrite_ctrl_to_EXMEM_pipe;
+   logic memtoreg_ctrl_to_EXMEM_pipe;
+   logic regwrite_ctrl_to_EXMEM_pipe;
+   logic [31:0] alu_result_to_EXMEM_pipe;
+   logic 	zero_alu_to_EXMEM_pipe;
+   logic [4:0] write_register_in_mux_to_MEMWB_pipe;
+   logic [31:0] alu_result_to_MEMWB_pipe;
+   logic [31:0] data_mem_rd_data_to_MEMWB_pipe;   
+   logic 	PCSrc;
+   logic 	memtoreg_ctrl_to_MEMWB_pipe;
+   logic 	regwrite_ctrl_to_MEMWB_pipe;
+   logic [31:0] 	     br_instr_offset_sign_extdt_shft_l_2;
+   logic [31:0] 	     branch_address_to_EXMEM_pipe;
+   logic cpu_ctrl_stall;   
    //***********************************//
 
 
@@ -73,18 +115,15 @@ module CPU_MIPS_32b_5stage(
    //************Instantiations*********//
 
 
-   // IF/ID stage
-   logic [31:0] 			      pc_plus_4_to_IFID_pipe;
-   logic [31:0] 			      pc_plus_4_to_IDEX_pipe;
-   
+   // IF/ID stage 
    always_ff@(posedge clk)begin
       if(!rst_n)begin
 	 instruction <= 32'b0;
 	 pc_plus_4_to_IDEX_pipe <= 32'h0;
       end
       else begin      
-	 if(hazard_detected | branch_taken) begin
-            instruction <= (branch_taken) ? 32'h0 : instruction;
+	 if(cpu_ctrl_stall) begin
+            instruction <= (branch_taken_IF_flush) ? 32'hff000000 : instruction;
 	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
 	 end
 	 else begin
@@ -96,27 +135,6 @@ module CPU_MIPS_32b_5stage(
    
    
    //ID/EX stage   
-   logic [31:0] read_data_1_to_IDEX_pipe;
-   logic [31:0] read_data_2_to_IDEX_pipe; 
-   logic [1:0] 	aluop_ctrl_to_IDEX_pipe;
-   logic 	regdst_ctrl_to_IDEX_pipe;
-   logic 	jump_ctrl_to_IDEX_pipe;
-   logic 	branch_ctrl_to_IDEX_pipe;
-   logic 	memread_ctrl_to_IDEX_pipe;
-   logic 	memwrite_ctrl_to_IDEX_pipe;
-   logic 	memtoreg_ctrl_to_IDEX_pipe;
-   logic 	alusrc_ctrl_to_IDEX_pipe;
-   logic 	regwrite_ctrl_to_IDEX_pipe;
-   logic [31:0] br_instr_offset_sign_extd_to_IDEX_pipe;
-   logic [4:0] 	instruction_25_21;
-   logic [4:0] 	instruction_15_11;
-   logic [4:0] 	instruction_20_16;
-   logic [4:0] 	reg_rs_from_IDEX;
-   logic [4:0] 	reg_rd_from_IDEX;
-   logic [4:0] 	reg_rt_from_IDEX;
-   logic [5:0] 	instruction_5_0; 
-   logic [31:0] pc_plus_4;
-
    assign reg_rs_from_IDEX = instruction_25_21;
    assign reg_rd_from_IDEX = instruction_15_11;
    assign reg_rt_from_IDEX = instruction_20_16;
@@ -167,17 +185,6 @@ module CPU_MIPS_32b_5stage(
 
 
    //EX/MEM stage
-   logic jump_ctrl_to_EXMEM_pipe    ;
-   logic branch_ctrl_to_EXMEM_pipe  ;
-   logic memread_ctrl_to_EXMEM_pipe ;
-   logic memwrite_ctrl_to_EXMEM_pipe;
-   logic memtoreg_ctrl_to_EXMEM_pipe;
-   logic regwrite_ctrl_to_EXMEM_pipe;
-   logic [31:0] alu_result_to_EXMEM_pipe;
-   logic 	zero_alu_to_EXMEM_pipe;
-   logic [31:0] data_mem_wrdata_to_EXMEM_pipe;
-   logic [4:0] 	write_register_in_mux_to_EXMEM_pipe;
-
    always_ff@(posedge clk) begin
       if(!rst_n) begin
 	 jump_ctrl    <= 0;         
@@ -210,13 +217,6 @@ module CPU_MIPS_32b_5stage(
 
 
    //MEM/WB stage
-   logic [4:0] write_register_in_mux_to_MEMWB_pipe;
-   logic [31:0] alu_result_to_MEMWB_pipe;
-   logic [31:0] data_mem_rd_data_to_MEMWB_pipe;   
-   logic 	PCSrc;
-   logic 	memtoreg_ctrl_to_MEMWB_pipe;
-   logic 	regwrite_ctrl_to_MEMWB_pipe;
-   
    assign PCSrc = branch_ctrl & zero_alu;
 
    always_ff@(posedge clk) begin
@@ -238,12 +238,9 @@ module CPU_MIPS_32b_5stage(
    
 
    // branch address calculation
-   logic [31:0] 	     br_instr_offset_sign_extdt_shft_l_2;
-   logic [31:0] 	     branch_address_to_EXMEM_pipe;
-   logic cpu_ctrl_stall;
    assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd_to_IDEX_pipe << 2;
    assign branch_address = pc_plus_4_to_IDEX_pipe + br_instr_offset_sign_extdt_shft_l_2;
-   assign cpu_ctrl_stall = (hazard_detected );
+   assign cpu_ctrl_stall = (hazard_detected | branch_hazard_stall);
 
    forwarding_unit i_forwarding_unit(
 				     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe	),
@@ -270,20 +267,38 @@ module CPU_MIPS_32b_5stage(
 						 .hazard_detected(hazard_detected)
 						 );
  
-   branch_predictor_static_nt i_branch_predictor_static_nt(
-							   .reg1_val(read_data_1_to_IDEX_pipe	),
-							   .reg2_val(read_data_2_to_IDEX_pipe	),
-							   .branch_instr_detected(branch_ctrl_to_IDEX_pipe),
-							   .branch_taken(branch_taken)
-							   );
+   branch_predictor_hndlr_static_nt i_brnch_pred_hndlr(
+						       .clk(clk),
+						       .rst_n(rst_n),
+						       //.branch_instr_detected(branch_ctrl_to_IDEX_pipe),
+						       .opcode_for_brnch_instr_detect(instruction[31:26]),
+						       .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
+						       .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe),
+						       .IFID_reg_rs(instruction[25:21]),
+						       .IFID_reg_rt(instruction[20:16]),
+						       .MEMWB_regwrite_ctrl(regwrite_ctrl),
+						       .MEMWB_reg_rd(write_register_in_mux),
+						       .read_data_1_from_regfile(read_data_1_to_IDEX_pipe),
+						       .read_data_2_from_regfile(read_data_2_to_IDEX_pipe),
+						       .EXMEM_alu_output(alu_result_to_MEMWB_pipe),
+						       .MEMWB_mux_output(reg_write_data_mux),
+						       .IDEX_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
+						       .IDEX_reg_rd(reg_rd_from_IDEX),
+						       .IDEX_memread_ctrl(memread_ctrl_to_IDEX_pipe),
+						       .IDEX_memtoreg_ctrl(memtoreg_ctrl_to_IDEX_pipe),
+						       .IDEX_alusrc_ctrl(alusrc_ctrl_to_IDEX_pipe),
+						       .branch_hazard_stall(branch_hazard_stall),
+						       .branch_taken_IF_flush(branch_taken_IF_flush)
+						       );
+
   
    pc i_pc(
 	   .clk(clk),
 	   .rst_n(rst_n),
 	   .instruction_jmp_imm(instruction[25:0]),
-	   .hazard_detected(hazard_detected),
+	   .hazard_detected(cpu_ctrl_stall),
 	   .branch_address(branch_address),
-	   .br_ctrl_mux_sel(branch_taken),
+	   .br_ctrl_mux_sel(branch_taken_IF_flush),
 	   .zero_alu(zero_alu),
 	   .jump_ctrl(jump_ctrl),
 	   .final_nxt_pc_mux(),
