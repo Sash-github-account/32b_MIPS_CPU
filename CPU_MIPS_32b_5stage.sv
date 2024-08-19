@@ -307,7 +307,7 @@ module CPU_MIPS_32b_5stage(
 	   .pc_halted(pc_halted)
 	   );
 
-   regfile_larr i_registers1(
+   regfile_fwd_wr i_registers1(
 			   .clk(clk),
 			   .rst_n(rst_n),
 			   .read_register_1(instruction[25:21]),
@@ -315,8 +315,8 @@ module CPU_MIPS_32b_5stage(
 			   .write_register(write_register_in_mux),
 			   .write_data(reg_write_data_mux),
 			   .regwrite_ctrl(regwrite_ctrl),
-			   .read_data_1(read_data_1_to_IDEX_pipe),
-			   .read_data_2(read_data_2_to_IDEX_pipe),
+			   .read_data_1_o(read_data_1_to_IDEX_pipe),
+			   .read_data_2_o(read_data_2_to_IDEX_pipe),
 			   .reg_led_o(reg_led_o)
 			   );
 
