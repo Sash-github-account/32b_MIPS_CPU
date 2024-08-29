@@ -30,7 +30,7 @@ module pc(
    assign pc_plus_4_jump_msb = pc_plus_4[31:28];
    assign instruction_jump_imm_shft_l_2 = {instruction_jmp_imm,2'b0};
    assign jump_address = {pc_plus_4_jump_msb, instruction_jump_imm_shft_l_2};
-   assign pc_plus_4_br_addr_mux = (br_ctrl_mux_sel) ? branch_address : pc_plus_4;
+   assign pc_plus_4_br_addr_mux = (br_ctrl_mux_sel & !hazard_detected) ? branch_address : pc_plus_4;
    assign final_nxt_pc_mux = (jump_ctrl) ? jump_address : pc_plus_4_br_addr_mux;
    //assign is_halt_pc = ((final_nxt_pc_mux >> 2) == HALT_PC);
    assign is_halt_pc = 0;
