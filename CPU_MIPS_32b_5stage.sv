@@ -272,7 +272,7 @@ module CPU_MIPS_32b_5stage(
 						 .hazard_detected(hazard_detected)
 						 );
    
-   brnch_pred_hndlr_1b_dyn i_brnch_pred_hndlr(
+   brnch_pred_hndlr_2b_dyn i_brnch_pred_hndlr(
 					      .clk(clk),
 					      .rst_n(rst_n),
 					      .opcode_for_brnch_instr_detect_IF(instruction_i[31:26]),
