@@ -272,30 +272,31 @@ module CPU_MIPS_32b_5stage(
 						 .hazard_detected(hazard_detected)
 						 );
    
-   brnch_pred_hndlr_2b_dyn i_brnch_pred_hndlr(
-					      .clk(clk),
-					      .rst_n(rst_n),
-					      .opcode_for_brnch_instr_detect_IF(instruction_i[31:26]),
-					      .opcode_for_brnch_instr_detect_ID(instruction[31:26]),
-					      .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
-					      .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe),
-					      .IFID_reg_rs(instruction[25:21]),
-					      .IFID_reg_rt(instruction[20:16]),
-					      .MEMWB_regwrite_ctrl(regwrite_ctrl),
-					      .MEMWB_reg_rd(write_register_in_mux),
-					      .read_data_1_from_regfile(read_data_1_to_IDEX_pipe),
-					      .read_data_2_from_regfile(read_data_2_to_IDEX_pipe),
-					      .EXMEM_alu_output(alu_result_to_MEMWB_pipe),
-					      .MEMWB_mux_output(reg_write_data_mux),
-					      .IDEX_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
-					      .IDEX_reg_rd(reg_rd_from_IDEX),
-					      .IDEX_memread_ctrl(memread_ctrl_to_IDEX_pipe),
-					      .IDEX_memtoreg_ctrl(memtoreg_ctrl_to_IDEX_pipe),
-					      .IDEX_alusrc_ctrl(alusrc_ctrl_to_IDEX_pipe),
-					      .branch_hazard_stall(branch_hazard_stall),
-					      .br_prediction(br_prediction),
-					      .flush(branch_taken_IF_flush)
-					      );
+   brnch_pred_hndlr_2b_correl_dyn i_brnch_pred_hndlr(
+						     .clk(clk),
+						     .rst_n(rst_n),
+						     .opcode_for_brnch_instr_detect_IF(instruction_i[31:26]),
+						     .opcode_for_brnch_instr_detect_ID(instruction[31:26]),
+						     .branch_addr_lw_5b(instruction_i[4:0]),
+						     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
+						     .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe),
+						     .IFID_reg_rs(instruction[25:21]),
+						     .IFID_reg_rt(instruction[20:16]),
+						     .MEMWB_regwrite_ctrl(regwrite_ctrl),
+						     .MEMWB_reg_rd(write_register_in_mux),
+						     .read_data_1_from_regfile(read_data_1_to_IDEX_pipe),
+						     .read_data_2_from_regfile(read_data_2_to_IDEX_pipe),
+						     .EXMEM_alu_output(alu_result_to_MEMWB_pipe),
+						     .MEMWB_mux_output(reg_write_data_mux),
+						     .IDEX_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
+						     .IDEX_reg_rd(reg_rd_from_IDEX),
+						     .IDEX_memread_ctrl(memread_ctrl_to_IDEX_pipe),
+						     .IDEX_memtoreg_ctrl(memtoreg_ctrl_to_IDEX_pipe),
+						     .IDEX_alusrc_ctrl(alusrc_ctrl_to_IDEX_pipe),
+						     .branch_hazard_stall(branch_hazard_stall),
+						     .br_prediction(br_prediction),
+						     .flush(branch_taken_IF_flush)
+						     );
 
    
    pc i_pc(
