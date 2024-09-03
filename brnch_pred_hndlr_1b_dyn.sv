@@ -3,6 +3,7 @@ module brnch_pred_hndlr_1b_dyn(
 					input logic 	   rst_n,
 					input logic [5:0]  opcode_for_brnch_instr_detect_IF,
 					input logic [5:0]  opcode_for_brnch_instr_detect_ID,
+					input logic [4:0] branch_addr_lw_5b,
 					input logic 	   EXMEM_regwrite_ctrl,
 					input logic [4:0]  EXMEM_reg_rd,
 					input logic [4:0]  IFID_reg_rs,
@@ -86,13 +87,15 @@ module brnch_pred_hndlr_1b_dyn(
 
    //*****************************************//
 
-   dyn_brnch_pred_1b i_dyn_brnch_pred_1b(
+   dyn_brnch_pred_1b_lhr i_dyn_brnch_pred_1b(
 					 .clk(clk),
 					 .rst_n(rst_n),
 					 .brch_instr_detectd_ID(branch_instr_detected_ID),
 					 .brch_instr_detectd_IF(branch_instr_detected_IF),
+					 .branch_addr_lw_5b(branch_addr_lw_5b),
+					 .brch_hazard_stall(branch_hazard_stall),
 					 .actual_brch_result(actual_branch_result),
-					 .predict_br_taken(br_prediction_i)
+					 .prediction(br_prediction_i)
 					 );
    
    forwarding_unit i_branch_forwarding_unit(

@@ -1,8 +1,10 @@
 module dyn_brnch_pred_1b_lhr(
 		             input logic       clk,
 			     input logic       rst_n,
-			     input logic       upd_pred_state,
-			     input logic [4:0] lpt_addr,
+			     input logic       brch_instr_detectd_ID,
+			     input logic       brch_instr_detectd_IF,
+			     input logic brch_hazard_stall,
+			     input logic [4:0] branch_addr_lw_5b,
 			     input logic       actual_brch_result,
 			     output logic      prediction
 			     );
@@ -10,8 +12,23 @@ module dyn_brnch_pred_1b_lhr(
    logic  				       lpt_regs[0:31];
    logic  				       cur_rdout_state;
    logic  				       new_state_for_cur_lpt_reg;
+      logic 					       upd_pred_state;
+      logic [4:0] branch_addr_lw_5b_int;
+      logic [4:0] lpt_addr;
    //-------- Wires ----------//
 
+   //----- Addr updation logic ----------//
+   assign lpt_addr = (brch_instr_detectd_IF) ? branch_addr_lw_5b : branch_addr_lw_5b_int;
+   always_ff@(posedge clk) begin
+      if(!rst_n) begin
+	 branch_addr_lw_5b_int <= 5'h00;
+      end
+      else begin
+	 if(brch_instr_detectd_ID | brch_instr_detectd_IF) branch_addr_lw_5b_int <= branch_addr_lw_5b;
+	 else branch_addr_lw_5b_int <= branch_addr_lw_5b_int;
+      end
+   end
+   //----- Addr updation logic ----------//
 
    
    //-------- FSM state definitions -------//    
@@ -22,7 +39,8 @@ module dyn_brnch_pred_1b_lhr(
 
 
    //------ Prediction -------//
-   assign prediction = cur_rdout_state;
+   assign prediction = cur_rdout_state & brch_instr_detectd_IF;
+   assign upd_pred_state =  brch_instr_detectd_ID & !brch_hazard_stall;
    //------ Prediction -------//
    
     
@@ -33,7 +51,7 @@ module dyn_brnch_pred_1b_lhr(
    always_ff@(posedge clk) begin
       if(!rst_n) begin
 	 for (int i=0; i<32; i=i+1) begin
-	    lpt_regs[i] <= 2'b00;
+	    lpt_regs[i] <= 1'b0;
 	 end	 
       end
       else begin
@@ -45,7 +63,7 @@ module dyn_brnch_pred_1b_lhr(
    //----- BHRs --------//
 
    //-------- Logic --------//
-   assign predict_br_taken = cur_br_state & brch_instr_detectd_IF;
+   
    
    always_comb begin
       new_state_for_cur_lpt_reg = 1'b0;
@@ -74,7 +92,7 @@ module dyn_brnch_pred_1b_lhr(
 	   default:  new_state_for_cur_lpt_reg = 1'b0;
 	 endcase
 
-      end // else: !if(!rst_n)
+
    end // always_ff@ (posedge clk)
    //-------- Logic --------//
 

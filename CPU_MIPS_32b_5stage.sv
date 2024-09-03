@@ -277,6 +277,7 @@ module CPU_MIPS_32b_5stage(
 						     .rst_n(rst_n),
 						     .opcode_for_brnch_instr_detect_IF(instruction_i[31:26]),
 						     .opcode_for_brnch_instr_detect_ID(instruction[31:26]),
+						     //.branch_addr_lw_5b(inst_mem_rd_addr_to_instmem[4:0]),
 						     .branch_addr_lw_5b(instruction_i[4:0]),
 						     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
 						     .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe),

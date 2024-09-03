@@ -3,6 +3,7 @@ module dyn_brnch_pred_correlational_ghp (
 				     input logic       rst_n,
 				     input logic       brch_instr_detectd_ID,
 				     input logic       brch_instr_detectd_IF,
+				     input logic [4:0] branch_addr_lw_5b,
 				     input logic       brch_hazard_stall,
 				     input logic       actual_brch_result,
 				     output logic      predict_br_taken

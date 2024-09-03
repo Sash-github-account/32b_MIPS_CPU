@@ -8,8 +8,7 @@ module local_history_table_shft_regs(
 			   );
    //-------- Wires ---------//
    logic [4:0] 				     lht_shft_regs[0:31];
-   
-   //-------- Wires ---------//
+  //-------- Wires ---------//
 
    //-------- LHT shft regs ----------//
    assign lht_entry_to_lpt = lht_shft_regs[shft_reg_addr_for_updtn];

@@ -1,4 +1,4 @@
-module dyn_brnch_pred_correlational_lhp (
+module dyn_brnch_pred_correlational (
 				     input logic       clk,
 				     input logic       rst_n,
 				     input logic [4:0] branch_addr_lw_5b,
@@ -12,8 +12,6 @@ module dyn_brnch_pred_correlational_lhp (
 
    //------ Wires----------//
    logic [4:0] 					       lpt_ram_addr;
-   logic [4:0] 					       branch_addr_lw_5b_int;
-   logic [4:0] 					       branch_addr_to_lht;
    logic 					       update_br_pred_state;
    logic 					       prediction;
    
@@ -22,21 +20,7 @@ module dyn_brnch_pred_correlational_lhp (
    //----- Prediction and update logic --------//
    assign predict_br_taken = prediction & brch_instr_detectd_IF;
    assign update_br_pred_state = brch_instr_detectd_ID & !brch_hazard_stall;
-   assign branch_addr_to_lht = (brch_instr_detectd_IF) ? branch_addr_lw_5b : branch_addr_lw_5b_int;
    //----- Prediction and update logic --------//
-
-   //----- Addr updation logic ----------//
-   always_ff@(posedge clk) begin
-      if(!rst_n) begin
-	 branch_addr_lw_5b_int <= 5'h00;
-      end
-      else begin
-	 if(brch_instr_detectd_ID | brch_instr_detectd_IF) branch_addr_lw_5b_int <= branch_addr_lw_5b;
-	 else branch_addr_lw_5b_int <= branch_addr_lw_5b_int;
-      end
-   end
-   //----- Addr updation logic ----------//
-
 
    
    //-------- LHT ----------//   
@@ -45,7 +29,7 @@ module dyn_brnch_pred_correlational_lhp (
 					   .rst_n(rst_n),
 					   .update_shft_reg(update_br_pred_state),
 					   .shft_value(actual_brch_result),
-					   .shft_reg_addr_for_updtn(branch_addr_to_lht),
+					   .shft_reg_addr_for_updtn(branch_addr_lw_5b),
 					   .lht_entry_to_lpt(lpt_ram_addr)
 					   );
    //-------- LHT ----------//   
