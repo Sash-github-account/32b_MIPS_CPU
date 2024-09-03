@@ -15,15 +15,29 @@ module dyn_brnch_pred_correlational_gshare (
    logic 						      update_br_pred_state;
    logic 						      prediction;
    logic [4:0] 						      gshare_hash;
+         logic [4:0] branch_addr_lw_5b_int;
+      logic [4:0] lpt_addr;
    //------ Wires----------//
 
    //----- Prediction and update logic --------//
    assign predict_br_taken = prediction & brch_instr_detectd_IF;
    assign update_br_pred_state = brch_instr_detectd_ID & !brch_hazard_stall;
-   assign gshare_hash = branch_addr_lw_5b ^ lpt_ram_addr;
+   assign gshare_hash = lpt_addr ^ lpt_ram_addr;
    //----- Prediction and update logic --------//
 
-   
+     //----- Addr updation logic ----------//
+   assign lpt_addr = (brch_instr_detectd_IF) ? branch_addr_lw_5b : branch_addr_lw_5b_int;
+   always_ff@(posedge clk) begin
+      if(!rst_n) begin
+	 branch_addr_lw_5b_int <= 5'h00;
+      end
+      else begin
+	 if(brch_instr_detectd_ID | brch_instr_detectd_IF) branch_addr_lw_5b_int <= branch_addr_lw_5b;
+	 else branch_addr_lw_5b_int <= branch_addr_lw_5b_int;
+      end
+   end
+   //----- Addr updation logic ----------//
+ 
    //-------- GHR ----------//   
    global_history_register i_ghr(
 				 .clk(clk),
