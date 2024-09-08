@@ -87,7 +87,7 @@ module brnch_pred_hndlr_2b_correl_dyn(
    //*****************************************//
 
    
-   dyn_brnch_pred_correlational_lhp i_dyn_brnch_pred_2b(
+   dyn_brnch_pred_correlational_tournament i_dyn_brnch_pred_2b(
 							   .clk(clk),
 							   .rst_n(rst_n),
 							   .branch_addr_lw_5b(branch_addr_lw_5b),

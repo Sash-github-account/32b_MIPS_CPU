@@ -361,13 +361,22 @@ module CPU_MIPS_32b_5stage(
    //	.clock(clk),
    //	.q(instruction));	
    
-   data_ram i_data_ram(
-		       .address(data_mem_addr[5:0]),
-		       .clock(clk),
-		       .data(data_mem_wrdata),
-		       .wren(memwrite_ctrl),
-		       .q(data_mem_rd_data_to_MEMWB_pipe));
-   
+   //data_ram i_data_ram(
+	//	       .address(data_mem_addr[5:0]),
+	//	       .clock(clk),
+	//	       .data(data_mem_wrdata),
+	//	       .wren(memwrite_ctrl),
+	//	       .q(data_mem_rd_data_to_MEMWB_pipe));
+	
+    design_1 i_data_ram(
+		       .addra(data_mem_addr),
+		       .clka(clk),
+		       .rsta(!rst_n),
+		       .dina(data_mem_wrdata),
+		       .ena(memwrite_ctrl),
+		       .wea({memwrite_ctrl, memwrite_ctrl, memwrite_ctrl, memwrite_ctrl}),
+		       .douta(data_mem_rd_data_to_MEMWB_pipe));  
+		       
    blink i_blnk(
 		.clk(clk), // 50MHz input clock
 		.cnt_en(led_load),
