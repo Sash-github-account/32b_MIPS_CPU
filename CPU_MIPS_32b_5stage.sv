@@ -97,6 +97,13 @@ module CPU_MIPS_32b_5stage(
    logic 				       br_prediction;
    logic [31:0] 			       br_instr_offset_sign_extd_to_IDEX_pipe_choose;
    logic [31:0] 			       br_instr_offset_sign_extd_to_IFID_pipe;   
+   logic 				       arith_ovrflw_exceptn_detected;
+   logic 				       decode_exception_detected;
+   logic 				       exceptn_flush_ID_stg;
+   logic 				       excceptn_flush_EX_stg;
+   logic 				       load_exceptn_vec_addr;
+   logic [31:0] 			       exception_vec_addr;
+   logic 				       IF_flush;
    //***********************************//
 
 
@@ -114,6 +121,7 @@ module CPU_MIPS_32b_5stage(
    assign led_load = (inst_mem_rd_addr == INSTR_FOR_LED_OUT) ? 1'b1:1'b0;
    assign led_data = inst_mem_rd_addr[7:0];
    assign inst_mem_rd_addr_to_instmem = inst_mem_rd_addr>>2;
+   assign IF_flush = branch_taken_IF_flush;
    //***********************************//
    
    
@@ -128,7 +136,7 @@ module CPU_MIPS_32b_5stage(
       end
       else begin      
 	 if(cpu_ctrl_stall) begin
-            instruction <= (branch_taken_IF_flush) ? 32'hff000000 : instruction;
+            instruction <= (IF_flush) ? 32'hff000000 : instruction;
 	    pc_plus_4_to_IDEX_pipe <= pc_plus_4_to_IDEX_pipe;
 	 end
 	 else begin
@@ -168,23 +176,42 @@ module CPU_MIPS_32b_5stage(
 	 pc_plus_4 <= 32'h0;
       end
       else begin
-	 read_data_1    <= read_data_1_to_IDEX_pipe ;
-	 read_data_2    <= read_data_2_to_IDEX_pipe ;
-	 aluop_ctrl    <=  aluop_ctrl_to_IDEX_pipe ;
-	 regdst_ctrl   <= regdst_ctrl_to_IDEX_pipe;  
-	 jump_ctrl_to_EXMEM_pipe     <= jump_ctrl_to_IDEX_pipe;    
-	 branch_ctrl_to_EXMEM_pipe   <= branch_ctrl_to_IDEX_pipe;  
-	 memread_ctrl_to_EXMEM_pipe  <= memread_ctrl_to_IDEX_pipe; 
-	 memwrite_ctrl_to_EXMEM_pipe <= memwrite_ctrl_to_IDEX_pipe;
-	 memtoreg_ctrl_to_EXMEM_pipe <= memtoreg_ctrl_to_IDEX_pipe;
-	 alusrc_ctrl   <= alusrc_ctrl_to_IDEX_pipe;  
-	 regwrite_ctrl_to_EXMEM_pipe <= regwrite_ctrl_to_IDEX_pipe;
-	 instruction_25_21 <= instruction[25:21];
-         instruction_15_11 <= instruction[15:11];
-	 instruction_20_16 <= instruction[20:16];
-	 instruction_5_0 <= instruction[5:0];
 	 br_instr_offset_sign_extd <= br_instr_offset_sign_extd_to_IDEX_pipe;
 	 pc_plus_4 <= pc_plus_4_to_IDEX_pipe;
+	 if(exceptn_flush_ID_stg) begin
+	    read_data_1 <= 32'b0;
+	    read_data_2 <= 32'b0;
+	    aluop_ctrl <= 32'b0;
+	    regdst_ctrl<= 32'b0;  
+	    jump_ctrl_to_EXMEM_pipe     <= 0;
+	    branch_ctrl_to_EXMEM_pipe   <= 0;
+	    memread_ctrl_to_EXMEM_pipe  <= 0;
+	    memwrite_ctrl_to_EXMEM_pipe <= 0;
+	    memtoreg_ctrl_to_EXMEM_pipe <= 0;
+	    alusrc_ctrl<= 32'b0;  
+	    regwrite_ctrl_to_EXMEM_pipe <= 32'b0; 
+	    instruction_25_21 <= 5'h0; 
+	    instruction_15_11 <= 5'h0;
+	    instruction_20_16 <= 5'h0;
+	    instruction_5_0 <= 6'h0;
+	 end // if (exceptn_flush_ID_stg)
+	 else begin
+	    read_data_1    <= read_data_1_to_IDEX_pipe ;
+	    read_data_2    <= read_data_2_to_IDEX_pipe ;
+	    aluop_ctrl    <=  aluop_ctrl_to_IDEX_pipe ;
+	    regdst_ctrl   <= regdst_ctrl_to_IDEX_pipe;  
+	    jump_ctrl_to_EXMEM_pipe     <= jump_ctrl_to_IDEX_pipe;    
+	    branch_ctrl_to_EXMEM_pipe   <= branch_ctrl_to_IDEX_pipe;  
+	    memread_ctrl_to_EXMEM_pipe  <= memread_ctrl_to_IDEX_pipe; 
+	    memwrite_ctrl_to_EXMEM_pipe <= memwrite_ctrl_to_IDEX_pipe;
+	    memtoreg_ctrl_to_EXMEM_pipe <= memtoreg_ctrl_to_IDEX_pipe;
+	    alusrc_ctrl   <= alusrc_ctrl_to_IDEX_pipe;  
+	    regwrite_ctrl_to_EXMEM_pipe <= regwrite_ctrl_to_IDEX_pipe;
+	    instruction_25_21 <= instruction[25:21];
+            instruction_15_11 <= instruction[15:11];
+	    instruction_20_16 <= instruction[20:16];
+	    instruction_5_0 <= instruction[5:0];
+	 end
       end
    end
 
@@ -205,17 +232,32 @@ module CPU_MIPS_32b_5stage(
 	 write_register_in_mux_to_MEMWB_pipe <= 0;
       end
       else begin
-	 jump_ctrl <= jump_ctrl_to_EXMEM_pipe    ;         
-	 branch_ctrl <= branch_ctrl_to_EXMEM_pipe  ;         
-	 memread_ctrl <= memread_ctrl_to_EXMEM_pipe ;         
-	 memwrite_ctrl <= memwrite_ctrl_to_EXMEM_pipe;         
-	 memtoreg_ctrl_to_MEMWB_pipe <= memtoreg_ctrl_to_EXMEM_pipe;         
-	 regwrite_ctrl_to_MEMWB_pipe <= regwrite_ctrl_to_EXMEM_pipe;         
-	 alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
-	 zero_alu <= zero_alu_to_EXMEM_pipe;       
-	 data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
-	 //branch_address <= branch_address_to_EXMEM_pipe;
-	 write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
+	 if(excceptn_flush_EX_stg) begin
+	    jump_ctrl    <= 0;         
+	    branch_ctrl  <= 0;         
+	    memread_ctrl <= 0;         
+	    memwrite_ctrl<= 0;         
+	    memtoreg_ctrl_to_MEMWB_pipe <= 0;         
+	    regwrite_ctrl_to_MEMWB_pipe <= 0;         
+	    alu_result_to_MEMWB_pipe <= 0;     
+	    zero_alu <= 0;       
+	    data_mem_wrdata <= 0;
+	    //branch_address <= 32'h0;
+	    write_register_in_mux_to_MEMWB_pipe <= 0;
+	 end // if (excceptn_flush_EX_stg)
+	 else begin
+	    jump_ctrl <= jump_ctrl_to_EXMEM_pipe    ;         
+	    branch_ctrl <= branch_ctrl_to_EXMEM_pipe  ;         
+	    memread_ctrl <= memread_ctrl_to_EXMEM_pipe ;         
+	    memwrite_ctrl <= memwrite_ctrl_to_EXMEM_pipe;         
+	    memtoreg_ctrl_to_MEMWB_pipe <= memtoreg_ctrl_to_EXMEM_pipe;         
+	    regwrite_ctrl_to_MEMWB_pipe <= regwrite_ctrl_to_EXMEM_pipe;         
+	    alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
+	    zero_alu <= zero_alu_to_EXMEM_pipe;       
+	    data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
+	    //branch_address <= branch_address_to_EXMEM_pipe;
+	    write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
+	 end
       end
    end
 
@@ -299,12 +341,30 @@ module CPU_MIPS_32b_5stage(
 						     .flush(branch_taken_IF_flush)
 						     );
 
+
+
+   exception_hndlr i_exception_hndlr(
+				     .clk(clk),
+				     .rst_n(rst_n),
+				     .alu_ovrflw_exception_detected(arith_ovrflw_exceptn_detected),
+				     .decode_exception_detected(decode_exception_detected),
+				     .cur_pc_plus_4_EX(pc_plus_4),
+				     .cur_pc_plus_4_ID(pc_plus_4_to_IDEX_pipe),
+				     .exceptn_flush_ID_stg(exceptn_flush_ID_stg),
+				     .excceptn_flush_EX_stg(excceptn_flush_EX_stg),
+				     .exception_vec_addr(exception_vec_addr),
+				     .load_exceptn_vec_addr(load_exceptn_vec_addr)
+				     );
+
+
    
    pc i_pc(
 	   .clk(clk),
 	   .rst_n(rst_n),
 	   .instruction_jmp_imm(instruction[25:0]),
 	   .hazard_detected(cpu_ctrl_stall),
+	   .load_exceptn_vec_addr(load_exceptn_vec_addr),
+	   .exception_vec_addr(exception_vec_addr),
 	   .branch_address(branch_address),
 	   .br_ctrl_mux_sel(br_prediction | branch_taken_IF_flush),
 	   .zero_alu(zero_alu),
@@ -333,6 +393,7 @@ module CPU_MIPS_32b_5stage(
 	     .op_2(alu_op_2_mux),
 	     .alu_ctrl(alu_ctrl),
 	     .alu_result(alu_result_to_EXMEM_pipe),
+	     .arith_ovrflw_exceptn_detected(arith_ovrflw_exceptn_detected),
 	     .zero_alu(zero_alu_to_EXMEM_pipe)
 	     );
 
@@ -353,7 +414,8 @@ module CPU_MIPS_32b_5stage(
 				 .memwrite_ctrl(memwrite_ctrl_to_IDEX_pipe),
 				 .memtoreg_ctrl(memtoreg_ctrl_to_IDEX_pipe),
 				 .alusrc_ctrl(alusrc_ctrl_to_IDEX_pipe),
-				 .regwrite_ctrl(regwrite_ctrl_to_IDEX_pipe)
+				 .regwrite_ctrl(regwrite_ctrl_to_IDEX_pipe),
+				 .decode_exception_detected(decode_exception_detected)
 				 ); 
    
    //	instr_rom		i_instr_rom (
@@ -361,21 +423,21 @@ module CPU_MIPS_32b_5stage(
    //	.clock(clk),
    //	.q(instruction));	
    
-   //data_ram i_data_ram(
-	//	       .address(data_mem_addr[5:0]),
-	//	       .clock(clk),
-	//	       .data(data_mem_wrdata),
-	//	       .wren(memwrite_ctrl),
-	//	       .q(data_mem_rd_data_to_MEMWB_pipe));
+   data_ram i_data_ram(
+		       .address(data_mem_addr[5:0]),
+		       .clock(clk),
+		       .data(data_mem_wrdata),
+		       .wren(memwrite_ctrl),
+		       .q(data_mem_rd_data_to_MEMWB_pipe));
 	
-    design_1 i_data_ram(
-		       .addra(data_mem_addr),
-		       .clka(clk),
-		       .rsta(!rst_n),
-		       .dina(data_mem_wrdata),
-		       .ena(memwrite_ctrl),
-		       .wea({memwrite_ctrl, memwrite_ctrl, memwrite_ctrl, memwrite_ctrl}),
-		       .douta(data_mem_rd_data_to_MEMWB_pipe));  
+// design_1 i_data_ram(
+//		       .addra(data_mem_addr),
+//		       .clka(clk),
+//		       .rsta(!rst_n),
+//		       .dina(data_mem_wrdata),
+//		       .ena(memwrite_ctrl),
+//		       .wea({memwrite_ctrl, memwrite_ctrl, memwrite_ctrl, memwrite_ctrl}),
+//		       .douta(data_mem_rd_data_to_MEMWB_pipe));  
 		       
    blink i_blnk(
 		.clk(clk), // 50MHz input clock
