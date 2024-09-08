@@ -14,10 +14,10 @@
 *     -> Correlational:
 *         -> 2b global predictor
 *         -> 2b local predictor
-*     WIP:
-*         1. exception handling mechanism
-*         2. super-scalar execution
-*         3. JMP instruction
 * -> vectored address exception handler capable of detecting 2 exception types:
 *     -> arithmetic overflow
 *     -> Undefined instruction detected
+*     WIP:
+*         . super-scalar execution
+*         . JMP instruction
+
