@@ -27,7 +27,7 @@ module alu(
    //************ ALU Operations ***************//
    always@(*) begin
       //***Deafults***//
-      alu_result = 33'h0;
+      alu_int = 33'h0;
       //**************//
       
       case(alu_ctrl)

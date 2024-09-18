@@ -104,6 +104,13 @@ module CPU_MIPS_32b_5stage(
    logic 				       load_exceptn_vec_addr;
    logic [31:0] 			       exception_vec_addr;
    logic 				       IF_flush;
+   logic 				       cache_miss;
+   logic 				       cache_miss_stall;
+   logic [31:0] 			       l2_mem_access_addr;
+   logic [31:0] 			       l2_mem_wr_data;
+   logic [31:0] 			       l2_mem_rd_data;
+   logic 				       wr_en;  
+   logic l2_mem_en;            
    //***********************************//
 
 
@@ -112,16 +119,18 @@ module CPU_MIPS_32b_5stage(
    //************** Comb logic ***************//
    assign write_register_in_mux_to_EXMEM_pipe = (regdst_ctrl) ? instruction_15_11 : instruction_20_16;
    assign reg_write_data_mux = (memtoreg_ctrl) ? data_mem_rd_data : alu_result;
+   //assign reg_write_data_mux = (memtoreg_ctrl_to_MEMWB_pipe) ? data_mem_rd_data_to_MEMWB_pipe : alu_result_to_MEMWB_pipe;
    assign br_instr_offset_sign_extd_to_IFID_pipe = (instruction_i[15]) ? {16'hffff,instruction_i[15:0]} : {16'h0000,instruction_i[15:0]};
    assign br_instr_offset_sign_extd_to_IDEX_pipe_choose = (instruction[15]) ? {16'hffff,instruction[15:0]} : {16'h0000,instruction[15:0]};
    assign br_instr_offset_sign_extd_to_IDEX_pipe = (br_prediction & !cpu_ctrl_stall) ? br_instr_offset_sign_extd_to_IFID_pipe : br_instr_offset_sign_extd_to_IDEX_pipe_choose;
    assign alu_op_2_mux = (alusrc_ctrl) ? br_instr_offset_sign_extd : read_data_2_in_to_alu;
-   assign data_mem_addr = alu_result_to_MEMWB_pipe;
+   assign data_mem_addr = alu_result_to_MEMWB_pipe << 2;
    assign data_mem_wrdata_to_EXMEM_pipe = read_data_2_in_to_alu;
    assign led_load = (inst_mem_rd_addr == INSTR_FOR_LED_OUT) ? 1'b1:1'b0;
    assign led_data = inst_mem_rd_addr[7:0];
    assign inst_mem_rd_addr_to_instmem = inst_mem_rd_addr>>2;
    assign IF_flush = branch_taken_IF_flush;
+   assign cache_miss_stall = cache_miss;
    //***********************************//
    
    
@@ -176,41 +185,62 @@ module CPU_MIPS_32b_5stage(
 	 pc_plus_4 <= 32'h0;
       end
       else begin
-	 br_instr_offset_sign_extd <= br_instr_offset_sign_extd_to_IDEX_pipe;
-	 pc_plus_4 <= pc_plus_4_to_IDEX_pipe;
-	 if(exceptn_flush_ID_stg) begin
-	    read_data_1 <= 32'b0;
-	    read_data_2 <= 32'b0;
-	    aluop_ctrl <= 32'b0;
-	    regdst_ctrl<= 32'b0;  
-	    jump_ctrl_to_EXMEM_pipe     <= 0;
-	    branch_ctrl_to_EXMEM_pipe   <= 0;
-	    memread_ctrl_to_EXMEM_pipe  <= 0;
-	    memwrite_ctrl_to_EXMEM_pipe <= 0;
-	    memtoreg_ctrl_to_EXMEM_pipe <= 0;
-	    alusrc_ctrl<= 32'b0;  
-	    regwrite_ctrl_to_EXMEM_pipe <= 32'b0; 
-	    instruction_25_21 <= 5'h0; 
-	    instruction_15_11 <= 5'h0;
-	    instruction_20_16 <= 5'h0;
-	    instruction_5_0 <= 6'h0;
-	 end // if (exceptn_flush_ID_stg)
+	 if(cache_miss_stall) begin
+	    read_data_1 <=                    read_data_1 ;                    
+	    read_data_2 <= 		   read_data_2 ;                    
+	    aluop_ctrl <= 			   aluop_ctrl ;                     
+	    regdst_ctrl<=   		   regdst_ctrl;                     
+	    jump_ctrl_to_EXMEM_pipe     <=    jump_ctrl_to_EXMEM_pipe     ;    
+	    branch_ctrl_to_EXMEM_pipe   <=    branch_ctrl_to_EXMEM_pipe   ;    
+	    memread_ctrl_to_EXMEM_pipe  <=    memread_ctrl_to_EXMEM_pipe  ;    
+	    memwrite_ctrl_to_EXMEM_pipe <=    memwrite_ctrl_to_EXMEM_pipe ;    
+	    memtoreg_ctrl_to_EXMEM_pipe <=    memtoreg_ctrl_to_EXMEM_pipe ;    
+	    alusrc_ctrl<=   		   alusrc_ctrl;                     
+	    regwrite_ctrl_to_EXMEM_pipe <=    regwrite_ctrl_to_EXMEM_pipe ;    
+	    instruction_25_21 <=  		   instruction_25_21 ;              
+	    instruction_15_11 <= 		   instruction_15_11 ;              
+	    instruction_20_16 <= 		   instruction_20_16 ;              
+	    br_instr_offset_sign_extd <= 	   br_instr_offset_sign_extd ;      
+	    instruction_5_0 <= 		   instruction_5_0 ;                
+	    pc_plus_4 <=                      pc_plus_4 ;
+	 end
 	 else begin
-	    read_data_1    <= read_data_1_to_IDEX_pipe ;
-	    read_data_2    <= read_data_2_to_IDEX_pipe ;
-	    aluop_ctrl    <=  aluop_ctrl_to_IDEX_pipe ;
-	    regdst_ctrl   <= regdst_ctrl_to_IDEX_pipe;  
-	    jump_ctrl_to_EXMEM_pipe     <= jump_ctrl_to_IDEX_pipe;    
-	    branch_ctrl_to_EXMEM_pipe   <= branch_ctrl_to_IDEX_pipe;  
-	    memread_ctrl_to_EXMEM_pipe  <= memread_ctrl_to_IDEX_pipe; 
-	    memwrite_ctrl_to_EXMEM_pipe <= memwrite_ctrl_to_IDEX_pipe;
-	    memtoreg_ctrl_to_EXMEM_pipe <= memtoreg_ctrl_to_IDEX_pipe;
-	    alusrc_ctrl   <= alusrc_ctrl_to_IDEX_pipe;  
-	    regwrite_ctrl_to_EXMEM_pipe <= regwrite_ctrl_to_IDEX_pipe;
-	    instruction_25_21 <= instruction[25:21];
-            instruction_15_11 <= instruction[15:11];
-	    instruction_20_16 <= instruction[20:16];
-	    instruction_5_0 <= instruction[5:0];
+	    br_instr_offset_sign_extd <= br_instr_offset_sign_extd_to_IDEX_pipe;
+	    pc_plus_4 <= pc_plus_4_to_IDEX_pipe;
+	    if(exceptn_flush_ID_stg) begin
+	       read_data_1 <= 32'b0;
+	       read_data_2 <= 32'b0;
+	       aluop_ctrl <= 32'b0;
+	       regdst_ctrl<= 32'b0;  
+	       jump_ctrl_to_EXMEM_pipe     <= 0;
+	       branch_ctrl_to_EXMEM_pipe   <= 0;
+	       memread_ctrl_to_EXMEM_pipe  <= 0;
+	       memwrite_ctrl_to_EXMEM_pipe <= 0;
+	       memtoreg_ctrl_to_EXMEM_pipe <= 0;
+	       alusrc_ctrl<= 32'b0;  
+	       regwrite_ctrl_to_EXMEM_pipe <= 32'b0; 
+	       instruction_25_21 <= 5'h0; 
+	       instruction_15_11 <= 5'h0;
+	       instruction_20_16 <= 5'h0;
+	       instruction_5_0 <= 6'h0;
+	    end // if (exceptn_flush_ID_stg)
+	    else begin
+	       read_data_1    <= read_data_1_to_IDEX_pipe ;
+	       read_data_2    <= read_data_2_to_IDEX_pipe ;
+	       aluop_ctrl    <=  aluop_ctrl_to_IDEX_pipe ;
+	       regdst_ctrl   <= regdst_ctrl_to_IDEX_pipe;  
+	       jump_ctrl_to_EXMEM_pipe     <= jump_ctrl_to_IDEX_pipe;    
+	       branch_ctrl_to_EXMEM_pipe   <= branch_ctrl_to_IDEX_pipe;  
+	       memread_ctrl_to_EXMEM_pipe  <= memread_ctrl_to_IDEX_pipe; 
+	       memwrite_ctrl_to_EXMEM_pipe <= memwrite_ctrl_to_IDEX_pipe;
+	       memtoreg_ctrl_to_EXMEM_pipe <= memtoreg_ctrl_to_IDEX_pipe;
+	       alusrc_ctrl   <= alusrc_ctrl_to_IDEX_pipe;  
+	       regwrite_ctrl_to_EXMEM_pipe <= regwrite_ctrl_to_IDEX_pipe;
+	       instruction_25_21 <= instruction[25:21];
+               instruction_15_11 <= instruction[15:11];
+	       instruction_20_16 <= instruction[20:16];
+	       instruction_5_0 <= instruction[5:0];
+	    end // else: !if(exceptn_flush_ID_stg)
 	 end
       end
    end
@@ -232,31 +262,45 @@ module CPU_MIPS_32b_5stage(
 	 write_register_in_mux_to_MEMWB_pipe <= 0;
       end
       else begin
-	 if(excceptn_flush_EX_stg) begin
-	    jump_ctrl    <= 0;         
-	    branch_ctrl  <= 0;         
-	    memread_ctrl <= 0;         
-	    memwrite_ctrl<= 0;         
-	    memtoreg_ctrl_to_MEMWB_pipe <= 0;         
-	    regwrite_ctrl_to_MEMWB_pipe <= 0;         
-	    alu_result_to_MEMWB_pipe <= 0;     
-	    zero_alu <= 0;       
-	    data_mem_wrdata <= 0;
-	    //branch_address <= 32'h0;
-	    write_register_in_mux_to_MEMWB_pipe <= 0;
-	 end // if (excceptn_flush_EX_stg)
+	 if(cache_miss_stall) begin
+	    jump_ctrl    <=                          jump_ctrl    ;                        
+	    branch_ctrl  <=          		  branch_ctrl  ;                        
+	    memread_ctrl <=          		  memread_ctrl ;                        
+	    memwrite_ctrl<=          		  memwrite_ctrl;                        
+	    memtoreg_ctrl_to_MEMWB_pipe <=           memtoreg_ctrl_to_MEMWB_pipe ;         
+	    regwrite_ctrl_to_MEMWB_pipe <=           regwrite_ctrl_to_MEMWB_pipe ;         
+	    alu_result_to_MEMWB_pipe <=      	  alu_result_to_MEMWB_pipe ;            
+	    zero_alu <=        			  zero_alu ;                            
+	    data_mem_wrdata <= 			  data_mem_wrdata ;                      
+	    write_register_in_mux_to_MEMWB_pipe <=   write_register_in_mux_to_MEMWB_pipe ; 
+	 end // if (cache_miss_stall)
 	 else begin
-	    jump_ctrl <= jump_ctrl_to_EXMEM_pipe    ;         
-	    branch_ctrl <= branch_ctrl_to_EXMEM_pipe  ;         
-	    memread_ctrl <= memread_ctrl_to_EXMEM_pipe ;         
-	    memwrite_ctrl <= memwrite_ctrl_to_EXMEM_pipe;         
-	    memtoreg_ctrl_to_MEMWB_pipe <= memtoreg_ctrl_to_EXMEM_pipe;         
-	    regwrite_ctrl_to_MEMWB_pipe <= regwrite_ctrl_to_EXMEM_pipe;         
-	    alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
-	    zero_alu <= zero_alu_to_EXMEM_pipe;       
-	    data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
-	    //branch_address <= branch_address_to_EXMEM_pipe;
-	    write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
+	    if(excceptn_flush_EX_stg) begin
+	       jump_ctrl    <= 0;         
+	       branch_ctrl  <= 0;         
+	       memread_ctrl <= 0;         
+	       memwrite_ctrl<= 0;         
+	       memtoreg_ctrl_to_MEMWB_pipe <= 0;         
+	       regwrite_ctrl_to_MEMWB_pipe <= 0;         
+	       alu_result_to_MEMWB_pipe <= 0;     
+	       zero_alu <= 0;       
+	       data_mem_wrdata <= 0;
+	       //branch_address <= 32'h0;
+	       write_register_in_mux_to_MEMWB_pipe <= 0;
+	    end // if (excceptn_flush_EX_stg)
+	    else begin
+	       jump_ctrl <= jump_ctrl_to_EXMEM_pipe    ;         
+	       branch_ctrl <= branch_ctrl_to_EXMEM_pipe  ;         
+	       memread_ctrl <= memread_ctrl_to_EXMEM_pipe ;         
+	       memwrite_ctrl <= memwrite_ctrl_to_EXMEM_pipe;         
+	       memtoreg_ctrl_to_MEMWB_pipe <= memtoreg_ctrl_to_EXMEM_pipe;         
+	       regwrite_ctrl_to_MEMWB_pipe <= regwrite_ctrl_to_EXMEM_pipe;         
+	       alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
+	       zero_alu <= zero_alu_to_EXMEM_pipe;       
+	       data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
+	       //branch_address <= branch_address_to_EXMEM_pipe;
+	       write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
+	    end
 	 end
       end
    end
@@ -275,19 +319,27 @@ module CPU_MIPS_32b_5stage(
 	 regwrite_ctrl <= 0;
       end
       else begin
-	 alu_result <= alu_result_to_MEMWB_pipe;
-	 data_mem_rd_data <= data_mem_rd_data_to_MEMWB_pipe;
-	 write_register_in_mux <= write_register_in_mux_to_MEMWB_pipe;
-	 memtoreg_ctrl <= memtoreg_ctrl_to_MEMWB_pipe;
-	 regwrite_ctrl <= regwrite_ctrl_to_MEMWB_pipe;
+	 if(cache_miss_stall) begin
+	    alu_result <=            alu_result ;               
+	    data_mem_rd_data <=	  data_mem_rd_data ;         
+	    write_register_in_mux <= write_register_in_mux ;    
+	    memtoreg_ctrl <= 	  memtoreg_ctrl ;            
+	    regwrite_ctrl <=         regwrite_ctrl ;
+	 end
+	 else begin
+	    alu_result <= alu_result_to_MEMWB_pipe;
+	    data_mem_rd_data <= data_mem_rd_data_to_MEMWB_pipe;
+	    write_register_in_mux <= write_register_in_mux_to_MEMWB_pipe;
+	    memtoreg_ctrl <= memtoreg_ctrl_to_MEMWB_pipe;
+	    regwrite_ctrl <= regwrite_ctrl_to_MEMWB_pipe;
+	 end
       end
-   end
-   
+   end   
 
    // branch address calculation
    assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd_to_IDEX_pipe << 2;
    assign branch_address = (br_prediction & !cpu_ctrl_stall) ? (pc_plus_4_to_IFID_pipe + br_instr_offset_sign_extdt_shft_l_2) : (pc_plus_4_to_IDEX_pipe + br_instr_offset_sign_extdt_shft_l_2);
-   assign cpu_ctrl_stall = (hazard_detected | branch_hazard_stall);
+   assign cpu_ctrl_stall = (hazard_detected | branch_hazard_stall | cache_miss);
 
    forwarding_unit i_forwarding_unit(
 				     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe	),
@@ -423,21 +475,37 @@ module CPU_MIPS_32b_5stage(
    //	.clock(clk),
    //	.q(instruction));	
    
-   data_ram i_data_ram(
-		       .address(data_mem_addr[5:0]),
-		       .clock(clk),
-		       .data(data_mem_wrdata),
-		       .wren(memwrite_ctrl),
-		       .q(data_mem_rd_data_to_MEMWB_pipe));
+//data_ram i_data_ram(
+//		       .address(data_mem_addr[5:0]),
+//		       .clock(clk),
+//		       .data(data_mem_wrdata),
+//		       .wren(memwrite_ctrl),
+//		       .q(data_mem_rd_data_to_MEMWB_pipe));
 	
-// design_1 i_data_ram(
-//		       .addra(data_mem_addr),
-//		       .clka(clk),
-//		       .rsta(!rst_n),
-//		       .dina(data_mem_wrdata),
-//		       .ena(memwrite_ctrl),
-//		       .wea({memwrite_ctrl, memwrite_ctrl, memwrite_ctrl, memwrite_ctrl}),
-//		       .douta(data_mem_rd_data_to_MEMWB_pipe));  
+ design_1 i_data_ram(
+		       .addra(l2_mem_access_addr),
+		       .clka(clk),
+		       .dina(l2_mem_wr_data),
+		       .ena(l2_mem_en),//memwrite_ctrl),
+		       .wea(wr_en),
+		       .douta(l2_mem_rd_data));  
+
+cache_V1b_T18b_8w_512E i_dcache(
+				.clk(clk),
+				.rst_n(rst_n),
+				.address(data_mem_addr),
+				.wrdata_in(data_mem_wrdata),
+				.wr_en(memwrite_ctrl),
+				.rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
+				.rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
+				.cache_miss(cache_miss),
+				.l2_mem_access_addr(l2_mem_access_addr),
+				.l2_mem_wr_data    (l2_mem_wr_data),
+				.l2_mem_rd_data     (l2_mem_rd_data),
+				.l2_mem_en              (l2_mem_en),
+ 				.l2_mem_wr_en (l2_mem_wr_en)
+				);
+
 		       
    blink i_blnk(
 		.clk(clk), // 50MHz input clock
