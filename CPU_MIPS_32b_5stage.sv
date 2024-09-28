@@ -487,7 +487,7 @@ module CPU_MIPS_32b_5stage(
 		       .clka(clk),
 		       .dina(l2_mem_wr_data),
 		       .ena(l2_mem_en),//memwrite_ctrl),
-		       .wea(wr_en),
+		       .wea(l2_mem_wr_en),
 		       .douta(l2_mem_rd_data));  
 
 cache_V1b_T18b_8w_512E i_dcache(

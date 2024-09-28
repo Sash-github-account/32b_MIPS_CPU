@@ -32,6 +32,9 @@ module cache_V1b_T18b_8w_512E(
    logic 					  upd_entry;
    logic 					  rd_en;
    logic 					  cache_mem_wr_en;
+   logic [1:0] 					  wr_ctrl_cur_state;
+   logic [1:0] 					  wr_ctrl_nxt_state;
+   logic 					  wr_stall;
    
    //********* Wires *********//
 
@@ -43,17 +46,86 @@ module cache_V1b_T18b_8w_512E(
    assign blk_sel  = address[4:2];
    assign tag_in_out_comp = (tag_in == tag_out);
    assign rd_cache_hit = rd_cache & tag_in_out_comp & valid_out;
-   assign wr_cache_hit = wr_en & tag_in_out_comp & valid_out;
+   //assign wr_cache_hit = wr_en & tag_in_out_comp & valid_out;
    //assign data_word_in = wrdata_in;
-   assign cache_miss = rd_cache_miss | wr_cache_miss;
+   assign cache_miss = rd_cache_miss | wr_cache_miss | wr_stall;
    assign rd_cache_miss = !rd_cache_hit & rd_cache;
-   assign wr_cache_miss = !wr_cache_hit & wr_en;
+   //assign wr_cache_miss = !wr_cache_hit & wr_en;
    assign l2_mem_en = rd_en | wr_en;
-   assign wr_entry_final = entry_upd_val;//(upd_entry) ? entry_upd_val : data_in;
+   assign wr_entry_final = (upd_entry) ? entry_upd_val : data_in;
    assign cache_mem_wr_en = wr_cache_hit | upd_entry;
-   assign l2_mem_wr_en = 0;
+//   assign l2_mem_wr_en = 0;
    
    //********* Logic - read *********//
+
+   //************* PARAMS *****************//
+   localparam IDLE = 2'b00;
+   localparam READ_CACHE_ENTRY = 2'b001;   
+   localparam WRITE_HIT_WORD = 2'b010;
+   localparam HANDLE_WRITE_MISS = 2'b011;
+   //************* PARAMS *****************//
+
+
+   
+   //****** Write ctrl *********//
+   always@(posedge clk) begin
+      if(!rst_n) begin
+	 wr_ctrl_cur_state <= IDLE;
+      end
+      else begin
+	 wr_ctrl_cur_state <= wr_ctrl_nxt_state;
+      end
+   end
+
+   always@(*) begin
+      wr_ctrl_nxt_state = IDLE;
+      wr_stall = 1'b0;
+      wr_cache_hit = 1'b0;
+      wr_cache_miss = 1'b0;
+      
+
+      case(wr_ctrl_cur_state)
+	IDLE: begin
+	   if(wr_en) begin
+	      wr_ctrl_nxt_state = READ_CACHE_ENTRY;
+	      wr_stall = 1'b1;
+	   end
+	   else begin
+	      wr_ctrl_nxt_state = wr_ctrl_nxt_state;
+	      wr_stall = 1'b0;
+	   end
+	end
+
+	READ_CACHE_ENTRY: begin
+	   if(tag_in_out_comp & valid_out) begin
+	      wr_cache_hit = 1'b1;
+	      wr_ctrl_nxt_state = WRITE_HIT_WORD;
+	   end
+	   else begin
+	      wr_cache_miss = 1'b1;
+	      wr_ctrl_nxt_state = HANDLE_WRITE_MISS;
+	   end
+	end
+
+	WRITE_HIT_WORD: begin
+	   wr_ctrl_nxt_state = IDLE;
+	end
+	
+	HANDLE_WRITE_MISS: begin
+	   wr_cache_miss = 1'b1;
+	   if(upd_entry) wr_ctrl_nxt_state = IDLE;
+	   else  wr_ctrl_nxt_state = HANDLE_WRITE_MISS;
+	end
+
+	default: begin
+	   wr_ctrl_nxt_state = IDLE;
+	   wr_stall = 1'b0;
+	   wr_cache_hit = 1'b0;
+	   wr_cache_miss = 1'b0;
+	end
+      endcase // case (wr_ctrl_cur_state)
+   end
+   //****** Write ctrl *********//
 
 
    
@@ -78,19 +150,19 @@ module cache_V1b_T18b_8w_512E(
 
    
    //********* Logic data_in *********//
-   always@(*) begin
-      data_in = 275'h0;
-      case(blk_sel)
-	 3'h0: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], wrdata_in};
-	 3'h1: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], wrdata_in, data_word_out[0]};
-	 3'h2: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], wrdata_in, data_word_out[1], data_word_out[0]};
-	 3'h3: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], wrdata_in, data_word_out[2], data_word_out[1], data_word_out[0]};
-	 3'h4: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], wrdata_in, data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
-	 3'h5: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], wrdata_in, data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
-	 3'h6: data_in = {valid_out, tag_out, data_word_out[7], wrdata_in, data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
-	 3'h7: data_in = {valid_out, tag_out, wrdata_in, data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
-	 default:  data_in = 274'h0;
-      endcase
+   always@(posedge clk) begin
+       data_in = 275'h0;
+     	 case(blk_sel)
+	   3'h0: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], wrdata_in};
+	   3'h1: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], wrdata_in, data_word_out[0]};
+	   3'h2: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], wrdata_in, data_word_out[1], data_word_out[0]};
+	   3'h3: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], wrdata_in, data_word_out[2], data_word_out[1], data_word_out[0]};
+	   3'h4: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], data_word_out[5], wrdata_in, data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
+	   3'h5: data_in = {valid_out, tag_out, data_word_out[7], data_word_out[6], wrdata_in, data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
+	   3'h6: data_in = {valid_out, tag_out, data_word_out[7], wrdata_in, data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
+	   3'h7: data_in = {valid_out, tag_out, wrdata_in, data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
+	   default:  data_in = 274'h0;
+	 endcase
    end
    //********* Logic data_in *********//  
 
@@ -108,16 +180,20 @@ module cache_V1b_T18b_8w_512E(
    //********* cache memory *********//    
 
 
-   cache_rd_miss_handler i_cache_rd_miss_handler(
+   cache_miss_handler i_cache_rd_miss_handler(
 						 .clk(clk),
 						 .rst_n(rst_n),
 						 .rd_miss(rd_cache_miss),
+						 .wr_miss(wr_cache_miss),
+					      .wr_miss_data(wrdata_in),
 						 .miss_addr(address),
 						 .l2_mem_access_addr(l2_mem_access_addr),
 						 .l2_mem_rd_data(l2_mem_rd_data),
 						 .rd_en(rd_en),
 						 .entry_upd_val(entry_upd_val),
-						 .upd_entry(upd_entry)
+						 .upd_entry(upd_entry),
+					      .l2_mem_wr_data(l2_mem_wr_data),
+					      .l2_mem_wr_en(l2_mem_wr_en)
 						 );
 
 endmodule // cache_V1b_T18b_8w_512E
