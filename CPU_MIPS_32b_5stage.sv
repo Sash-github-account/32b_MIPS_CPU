@@ -495,7 +495,7 @@ cache_V1b_T18b_8w_512E i_dcache(
 				.rst_n(rst_n),
 				.address(data_mem_addr),
 				.wrdata_in(data_mem_wrdata),
-				.wr_en(memwrite_ctrl),
+				.wr_cache(memwrite_ctrl),
 				.rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
 				.rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
 				.cache_miss(cache_miss),
