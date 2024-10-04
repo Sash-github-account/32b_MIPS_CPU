@@ -17,7 +17,12 @@
 * -> vectored address exception handler capable of detecting 2 exception types:
 *     -> arithmetic overflow
 *     -> Undefined instruction detected
+* -> L1 data Cache:
+*     -> 512 entries, 8 words per entry, 19 bit tag, valid flag
+*     -> write-through to L2 data memory: 16Kx32b
 *     WIP:
 *         . super-scalar execution
 *         . JMP instruction
+*         . L1 instruction cache
+*         . extend 
 
