@@ -18,6 +18,7 @@ module cache_miss_handler(
    //******** Wires *******//
    logic [2:0] 					  rd_tr_cntr;
    logic [31:0] 				  rd_data_buf[0:7];
+   logic 					  upd_entry_prev;
    //******** Wires *******//
    
 
@@ -32,9 +33,11 @@ module cache_miss_handler(
    always@(posedge clk) begin
       if(!rst_n) begin
 	 upd_entry <= 1'b0;
+	 upd_entry_prev <= 1'b0;
       end
       else begin
 	 upd_entry <= (rd_tr_cntr == 3'b111);
+	 upd_entry_prev <= upd_entry; 
       end // else: !if(!rst_n)
    end // always@ (posedge clk)
    
