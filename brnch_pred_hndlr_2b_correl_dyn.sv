@@ -21,7 +21,8 @@ module brnch_pred_hndlr_2b_correl_dyn(
 				      input logic 	 IDEX_alusrc_ctrl,
 				      output logic 	 branch_hazard_stall,
 				      output logic 	 br_prediction,
-				      output logic 	 flush
+				      output logic 	 flush,
+				      output logic 	 jump_detected
 				      );
 
    //****** Wires ******//
@@ -36,11 +37,11 @@ module brnch_pred_hndlr_2b_correl_dyn(
    logic 						 actual_branch_result;
    logic 						 br_prediction_ID;
    logic 						 br_prediction_i;
-   
    //****** Wires ******//
 
    //****** detect branch instr in IF ********//
    assign branch_instr_detected_IF = (opcode_for_brnch_instr_detect_IF == 6'b000100);
+   assign jump_detected = (opcode_for_brnch_instr_detect_IF == 6'b000010);   
    //****** detect branch instr in IF ********//
 
    

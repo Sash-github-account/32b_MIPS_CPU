@@ -42,7 +42,8 @@ module CPU_MIPS_32b_5stage(
    logic [7:0] 				       led_data;
    logic [7:0] 				       reg_led_o;
    logic 				       pc_halted;
-   logic 				       jump_ctrl;   
+   logic 				       jump_ctrl;  
+   logic 				       jump_detected;
    logic 				       branch_ctrl;   
    logic 				       memwrite_ctrl;   
    logic 				       regwrite_ctrl;   
@@ -393,7 +394,8 @@ module CPU_MIPS_32b_5stage(
 						     .IDEX_alusrc_ctrl(alusrc_ctrl_to_IDEX_pipe),
 						     .branch_hazard_stall(branch_hazard_stall),
 						     .br_prediction(br_prediction),
-						     .flush(branch_taken_IF_flush)
+						     .flush(branch_taken_IF_flush),
+						     .jump_detected(jump_detected)
 						     );
 
 
@@ -416,14 +418,14 @@ module CPU_MIPS_32b_5stage(
    pc i_pc(
 	   .clk(clk),
 	   .rst_n(rst_n),
-	   .instruction_jmp_imm(instruction[25:0]),
+	   .instruction_jmp_imm(instruction_i[25:0]),
 	   .hazard_detected(cpu_ctrl_stall),
 	   .load_exceptn_vec_addr(load_exceptn_vec_addr),
 	   .exception_vec_addr(exception_vec_addr),
 	   .branch_address(branch_address),
 	   .br_ctrl_mux_sel(br_prediction | branch_taken_IF_flush),
 	   .zero_alu(zero_alu),
-	   .jump_ctrl(jump_ctrl),
+	   .jump_ctrl(jump_detected),
 	   .final_nxt_pc_mux(),
 	   .pc_plus_4(pc_plus_4_to_IFID_pipe),
 	   .cur_pc(inst_mem_rd_addr),
