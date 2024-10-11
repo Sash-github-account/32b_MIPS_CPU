@@ -8,6 +8,8 @@ module cache_miss_handler(
 			  output logic [31:0] 	  l2_mem_access_addr,
 			  input logic [31:0] 	  l2_mem_rd_data,
 			  output logic 		  rd_en,
+			  input logic 		  l2_bus_arbiter_rd_granted,
+			  input logic 		  l2_bus_arbiter_wr_granted,
 			  output logic [274-19:0] upd_data_entry,
 			  output logic 		  upd_entry,
 			  output logic [18:0] 	  upd_entry_tag_vld,
@@ -47,8 +49,8 @@ module cache_miss_handler(
 	 rd_tr_cntr <= 3'b000;
       end
       else begin
-	 if(rd_en) begin
-	    rd_tr_cntr <= rd_tr_cntr + 1; 
+	 if(rd_en & l2_bus_arbiter_rd_granted) begin
+	    rd_tr_cntr <= rd_tr_cntr + 3'h1; 
 	 end
 	 else rd_tr_cntr <= 3'h0;
       end // else: !if(!rst_n)
@@ -78,22 +80,22 @@ module cache_miss_handler(
       if(!rst_n) begin
 	 rd_en <= 1'b0;
 	 l2_mem_wr_en <= 1'b0;
-	 l2_mem_access_addr <= 32'h00000000;
+	 //l2_mem_access_addr <= 32'h00000000;
 	 l2_mem_wr_data <= 32'h000000000;
       end
       else begin
 	 if((rd_miss|wr_miss) & !upd_entry) rd_en <= 1'b1;
 	 else begin 
 	    rd_en <= 1'b0;
-	    if(wr_miss) begin
+	    if(wr_miss & l2_bus_arbiter_wr_granted) begin
 	       l2_mem_wr_en <= 1'b1;
 	       l2_mem_wr_data <= wr_miss_data;
-	       l2_mem_access_addr <= {2'b00, miss_addr[31:2]};
+	       //l2_mem_access_addr <= {2'b00, miss_addr[31:2]};
 	    end
 	    else begin
 	       l2_mem_wr_en <= 1'b0;
 	       l2_mem_wr_data <= 32'h00000000;
-	       l2_mem_access_addr <= 32'b00000000;    
+	       //l2_mem_access_addr <= 32'h00000000;    
 	    end
 	 end
       end // else: !if(!rst_n)

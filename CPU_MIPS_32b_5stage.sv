@@ -8,15 +8,15 @@
 module CPU_MIPS_32b_5stage(
 			   input logic 	       clk,
 			   input logic 	       rst_n,
-			   output logic        memread_ctrl,
-			   output logic [31:0] inst_mem_rd_addr_to_instmem,
-			   input logic [31:0]  instruction_i, 
+			   //output logic [31:0] inst_mem_rd_addr_to_instmem,
+			   //input logic [31:0]  instruction_i, 
 			   output logic [0:7]  LED_o
 			   );
 
 
    //**********Declarations*************//
    localparam [31:0] INSTR_FOR_LED_OUT = 3;
+   logic 				       memread_ctrl;
    logic [4:0] 				       write_register_in_mux;
    logic [31:0] 			       reg_write_data_mux;
    logic [31:0] 			       alu_result;
@@ -107,11 +107,25 @@ module CPU_MIPS_32b_5stage(
    logic 				       IF_flush;
    logic 				       cache_miss;
    logic 				       cache_miss_stall;
+   logic [31:0] 			       l2_mem_access_addr_dcache;
+   logic [31:0] 			       l2_mem_wr_data_dcache;
+   logic [31:0] 			       l2_mem_rd_data_dcache;
+   logic 				       l2_mem_wr_en_dcache;  
+   logic 				       l2_mem_en_dcache;   
+   logic [31:0] 			       l2_mem_access_addr_icache;
+   logic [31:0] 			       l2_mem_wr_data_icache;
+   logic [31:0] 			       l2_mem_rd_data_icache;
+   logic 				       l2_mem_wr_en_icache;  
+   logic 				       l2_mem_en_icache;
    logic [31:0] 			       l2_mem_access_addr;
    logic [31:0] 			       l2_mem_wr_data;
    logic [31:0] 			       l2_mem_rd_data;
-   logic 				       wr_en;  
-   logic l2_mem_en;            
+   logic 				       l2_mem_wr_en;  
+   logic 				       l2_mem_en;
+   logic [31:0] 			       instruction_i;
+   logic 				       l2_bus_arbiter_rd_granted_icache;
+   logic 				       l2_bus_arbiter_rd_granted_dcache;
+   
    //***********************************//
 
 
@@ -495,6 +509,53 @@ module CPU_MIPS_32b_5stage(
 		       .wea(l2_mem_wr_en),
 		       .douta(l2_mem_rd_data));  
 
+
+l2_mem_bus_arbiter i_l2_bus_arb(
+			  .clk(clk),
+			  .rst_n(rst_n),
+			  .l2_mem_access_addr_dcache(l2_mem_access_addr_dcache),
+			  .l2_mem_wr_data_dcache(l2_mem_wr_data_dcache),
+			  .l2_mem_rd_data_dcache(l2_mem_rd_data_dcache),
+			  .l2_mem_wr_en_dcache(l2_mem_wr_en_dcache), 
+			  .l2_mem_en_dcache(l2_mem_en_dcache), 
+			  .l2_mem_access_addr_icache(l2_mem_access_addr_icache),
+			  .l2_mem_wr_data_icache(l2_mem_wr_data_icache),
+			  .l2_mem_rd_data_icache(l2_mem_rd_data_icache),
+			  .l2_mem_wr_en_icache(l2_mem_wr_en_icache), 
+			  .l2_mem_en_icache(l2_mem_en_icache),
+			  .l2_mem_access_addr(l2_mem_access_addr),
+			  .l2_mem_wr_data(l2_mem_wr_data),
+			  .l2_mem_rd_data(l2_mem_rd_data),
+			  .l2_mem_wr_en(l2_mem_wr_en),
+			  .l2_mem_en(l2_mem_en),
+			  .rd_req_icache_active(l2_bus_arbiter_rd_granted_icache),
+			  .rd_req_dcache_active(l2_bus_arbiter_rd_granted_dcache),
+			  .wr_req_icache_active(l2_bus_arbiter_wr_granted_icache),
+			  .wr_req_dcache_active(l2_bus_arbiter_wr_granted_dcache)
+			  );
+   
+
+cache_V1b_T18b_8w_512E i_icache(
+				.clk(clk),
+				.rst_n(rst_n),
+				.address(inst_mem_rd_addr),
+				.wrdata_in(data_mem_wrdata),
+				.wr_cache(memwrite_ctrl),
+				.rd_cache(1'b1),
+				.rd_data_o(instruction_i),
+				.cache_miss(cache_miss),
+				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_icache),
+				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_icache),
+				.l2_mem_access_addr(l2_mem_access_addr_icache),
+				.l2_mem_wr_data    (l2_mem_wr_data_icache),
+				.l2_mem_rd_data     (l2_mem_rd_data_icache),
+				.l2_mem_en              (l2_mem_en_icache),
+ 				.l2_mem_wr_en (l2_mem_wr_en_icache)
+				);
+
+		       
+
+   
 cache_V1b_T18b_8w_512E i_dcache(
 				.clk(clk),
 				.rst_n(rst_n),
@@ -504,11 +565,13 @@ cache_V1b_T18b_8w_512E i_dcache(
 				.rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
 				.rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
 				.cache_miss(cache_miss),
-				.l2_mem_access_addr(l2_mem_access_addr),
-				.l2_mem_wr_data    (l2_mem_wr_data),
-				.l2_mem_rd_data     (l2_mem_rd_data),
-				.l2_mem_en              (l2_mem_en),
- 				.l2_mem_wr_en (l2_mem_wr_en)
+				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_dcache),
+				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_dcache),
+				.l2_mem_access_addr(l2_mem_access_addr_dcache),
+				.l2_mem_wr_data    (l2_mem_wr_data_dcache),
+				.l2_mem_rd_data     (l2_mem_rd_data_dcache),
+				.l2_mem_en              (l2_mem_en_dcache),
+ 				.l2_mem_wr_en (l2_mem_wr_en_dcache)
 				);
 
 		       
