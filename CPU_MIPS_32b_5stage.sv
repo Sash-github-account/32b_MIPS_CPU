@@ -7,8 +7,7 @@
 
 module CPU_MIPS_32b_5stage(
 			   input logic 	       clk,
-			   input logic 	       rst_n,
-			   //output logic [31:0] inst_mem_rd_addr_to_instmem,
+			   input logic 	       rst_n_async,
 			   //input logic [31:0]  instruction_i, 
 			   output logic [0:7]  LED_o
 			   );
@@ -25,8 +24,6 @@ module CPU_MIPS_32b_5stage(
    logic 				       alusrc_ctrl;
    logic 				       memtoreg_ctrl;
    logic 				       regdst_ctrl; 
-   logic [31:0] 			       read_data_1_discon;
-   logic [31:0] 			       read_data_2_discon;
    logic [31:0] 			       read_data_1;
    logic [31:0] 			       read_data_2;
    logic [31:0] 			       read_data_1_in_to_alu;
@@ -39,7 +36,6 @@ module CPU_MIPS_32b_5stage(
    logic [31:0] 			       inst_mem_rd_addr;
    logic [31:0] 			       data_mem_rd_data;
    logic 				       led_load;
-   logic [7:0] 				       led_data;
    logic [7:0] 				       reg_led_o;
    logic 				       pc_halted;
    logic 				       jump_ctrl;  
@@ -47,7 +43,6 @@ module CPU_MIPS_32b_5stage(
    logic 				       branch_ctrl;   
    logic 				       memwrite_ctrl;   
    logic 				       regwrite_ctrl;   
-   logic 				       zero_alu;   
    logic [31:0] 			       branch_address;
    logic [1:0] 				       forward_a;
    logic [1:0] 				       forward_b;
@@ -85,11 +80,9 @@ module CPU_MIPS_32b_5stage(
    logic 				       memtoreg_ctrl_to_EXMEM_pipe;
    logic 				       regwrite_ctrl_to_EXMEM_pipe;
    logic [31:0] 			       alu_result_to_EXMEM_pipe;
-   logic 				       zero_alu_to_EXMEM_pipe;
    logic [4:0] 				       write_register_in_mux_to_MEMWB_pipe;
    logic [31:0] 			       alu_result_to_MEMWB_pipe;
    logic [31:0] 			       data_mem_rd_data_to_MEMWB_pipe;   
-   logic 				       PCSrc;
    logic 				       memtoreg_ctrl_to_MEMWB_pipe;
    logic 				       regwrite_ctrl_to_MEMWB_pipe;
    logic [31:0] 			       br_instr_offset_sign_extdt_shft_l_2;
@@ -105,7 +98,8 @@ module CPU_MIPS_32b_5stage(
    logic 				       load_exceptn_vec_addr;
    logic [31:0] 			       exception_vec_addr;
    logic 				       IF_flush;
-   logic 				       cache_miss;
+   logic 				       cache_miss_icache;
+   logic 				       cache_miss_icache;
    logic 				       cache_miss_stall;
    logic [31:0] 			       l2_mem_access_addr_dcache;
    logic [31:0] 			       l2_mem_wr_data_dcache;
@@ -142,10 +136,8 @@ module CPU_MIPS_32b_5stage(
    assign data_mem_addr = alu_result_to_MEMWB_pipe << 2;
    assign data_mem_wrdata_to_EXMEM_pipe = read_data_2_in_to_alu;
    assign led_load = (inst_mem_rd_addr == INSTR_FOR_LED_OUT) ? 1'b1:1'b0;
-   assign led_data = inst_mem_rd_addr[7:0];
-   assign inst_mem_rd_addr_to_instmem = inst_mem_rd_addr>>2;
    assign IF_flush = branch_taken_IF_flush;
-   assign cache_miss_stall = cache_miss;
+   assign cache_miss_stall = cache_miss_icache | cache_miss_dcache;
    //***********************************//
    
    
@@ -176,8 +168,6 @@ module CPU_MIPS_32b_5stage(
    assign reg_rd_from_IDEX = instruction_15_11;
    assign reg_rt_from_IDEX = instruction_20_16;
    
-   assign read_data_1_discon = 0;
-   assign read_data_2_discon = 0;
    
    always_ff@(posedge clk)begin
       if(!rst_n)begin
@@ -273,9 +263,7 @@ module CPU_MIPS_32b_5stage(
 	 memtoreg_ctrl_to_MEMWB_pipe <= 0;         
 	 regwrite_ctrl_to_MEMWB_pipe <= 0;         
 	 alu_result_to_MEMWB_pipe <= 0;     
-	 zero_alu <= 0;       
 	 data_mem_wrdata <= 0;
-	 //branch_address <= 32'h0;
 	 write_register_in_mux_to_MEMWB_pipe <= 0;
       end
       else begin
@@ -288,9 +276,7 @@ module CPU_MIPS_32b_5stage(
 	       memtoreg_ctrl_to_MEMWB_pipe <= 0;         
 	       regwrite_ctrl_to_MEMWB_pipe <= 0;         
 	       alu_result_to_MEMWB_pipe <= 0;     
-	       zero_alu <= 0;       
 	       data_mem_wrdata <= 0;
-	       //branch_address <= 32'h0;
 	       write_register_in_mux_to_MEMWB_pipe <= 0;
 	    end // if (excceptn_flush_EX_stg)
 	    else begin
@@ -301,7 +287,6 @@ module CPU_MIPS_32b_5stage(
 	       memtoreg_ctrl_to_MEMWB_pipe <=           memtoreg_ctrl_to_MEMWB_pipe ;         
 	       regwrite_ctrl_to_MEMWB_pipe <=           regwrite_ctrl_to_MEMWB_pipe ;         
 	       alu_result_to_MEMWB_pipe <=      	  alu_result_to_MEMWB_pipe ;            
-	       zero_alu <=        			  zero_alu ;                            
 	       data_mem_wrdata <= 			  data_mem_wrdata ;                      
 	       write_register_in_mux_to_MEMWB_pipe <=   write_register_in_mux_to_MEMWB_pipe ; 
 	    end // if (cache_miss_stall)
@@ -314,9 +299,7 @@ module CPU_MIPS_32b_5stage(
 	    memtoreg_ctrl_to_MEMWB_pipe <= memtoreg_ctrl_to_EXMEM_pipe;         
 	    regwrite_ctrl_to_MEMWB_pipe <= regwrite_ctrl_to_EXMEM_pipe;         
 	    alu_result_to_MEMWB_pipe <= alu_result_to_EXMEM_pipe;     
-	    zero_alu <= zero_alu_to_EXMEM_pipe;       
 	    data_mem_wrdata <= data_mem_wrdata_to_EXMEM_pipe;
-	    //branch_address <= branch_address_to_EXMEM_pipe;
 	    write_register_in_mux_to_MEMWB_pipe <= write_register_in_mux_to_EXMEM_pipe;
 	    
 	 end
@@ -326,7 +309,6 @@ module CPU_MIPS_32b_5stage(
 
 
    //MEM/WB stage
-   assign PCSrc = branch_ctrl & zero_alu;
 
    always_ff@(posedge clk) begin
       if(!rst_n) begin
@@ -357,8 +339,18 @@ module CPU_MIPS_32b_5stage(
    // branch address calculation
    assign br_instr_offset_sign_extdt_shft_l_2 = br_instr_offset_sign_extd_to_IDEX_pipe << 2;
    assign branch_address = (br_prediction & !cpu_ctrl_stall) ? (pc_plus_4_to_IFID_pipe + br_instr_offset_sign_extdt_shft_l_2) : (pc_plus_4_to_IDEX_pipe + br_instr_offset_sign_extdt_shft_l_2);
-   assign cpu_ctrl_stall = (hazard_detected | branch_hazard_stall | cache_miss);
+   assign cpu_ctrl_stall = (hazard_detected | branch_hazard_stall | cache_miss_stall);
 
+
+   sync_cell i_rst_sync(
+			.clk(clk),
+			.rst_n(rst_n_async),
+			.data_in(1'b1),
+			.syncd_data_out(rst_n)
+			);
+
+
+   
    forwarding_unit i_forwarding_unit(
 				     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe	),
 				     .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe	),
@@ -375,8 +367,6 @@ module CPU_MIPS_32b_5stage(
 				     );
 
    hazard_detection_unit i_hazard_detection_unit(
-						 .clk(clk),
-						 .rst_n(rst_n),
 						 .IDEX_memread_ctrl(memread_ctrl_to_EXMEM_pipe),
 						 .IDEX_reg_rt(reg_rt_from_IDEX),
 						 .IFID_reg_rs(instruction[25:21]),
@@ -389,7 +379,6 @@ module CPU_MIPS_32b_5stage(
 						     .rst_n(rst_n),
 						     .opcode_for_brnch_instr_detect_IF(instruction_i[31:26]),
 						     .opcode_for_brnch_instr_detect_ID(instruction[31:26]),
-						     //.branch_addr_lw_5b(inst_mem_rd_addr_to_instmem[4:0]),
 						     .branch_addr_lw_5b(instruction_i[4:0]),
 						     .EXMEM_regwrite_ctrl(regwrite_ctrl_to_MEMWB_pipe),
 						     .EXMEM_reg_rd(write_register_in_mux_to_MEMWB_pipe),
@@ -438,12 +427,10 @@ module CPU_MIPS_32b_5stage(
 	   .exception_vec_addr(exception_vec_addr),
 	   .branch_address(branch_address),
 	   .br_ctrl_mux_sel(br_prediction | branch_taken_IF_flush),
-	   .zero_alu(zero_alu),
 	   .jump_ctrl(jump_detected),
 	   .final_nxt_pc_mux(),
 	   .pc_plus_4(pc_plus_4_to_IFID_pipe),
-	   .cur_pc(inst_mem_rd_addr),
-	   .pc_halted(pc_halted)
+	   .cur_pc(inst_mem_rd_addr)
 	   );
 
    regfile_fwd_wr i_registers1(
@@ -464,8 +451,7 @@ module CPU_MIPS_32b_5stage(
 	     .op_2(alu_op_2_mux),
 	     .alu_ctrl(alu_ctrl),
 	     .alu_result(alu_result_to_EXMEM_pipe),
-	     .arith_ovrflw_exceptn_detected(arith_ovrflw_exceptn_detected),
-	     .zero_alu(zero_alu_to_EXMEM_pipe)
+	     .arith_ovrflw_exceptn_detected(arith_ovrflw_exceptn_detected)
 	     );
 
    alu_control i_alu_control(
@@ -528,10 +514,10 @@ l2_mem_bus_arbiter i_l2_bus_arb(
 			  .l2_mem_rd_data(l2_mem_rd_data),
 			  .l2_mem_wr_en(l2_mem_wr_en),
 			  .l2_mem_en(l2_mem_en),
-			  .rd_req_icache_active(l2_bus_arbiter_rd_granted_icache),
-			  .rd_req_dcache_active(l2_bus_arbiter_rd_granted_dcache),
-			  .wr_req_icache_active(l2_bus_arbiter_wr_granted_icache),
-			  .wr_req_dcache_active(l2_bus_arbiter_wr_granted_dcache)
+			  .rd_grant_icache_active(l2_bus_arbiter_rd_granted_icache),
+			  .rd_grant_dcache_active(l2_bus_arbiter_rd_granted_dcache),
+			  .wr_grant_icache_active(l2_bus_arbiter_wr_granted_icache),
+			  .wr_grant_dcache_active(l2_bus_arbiter_wr_granted_dcache)
 			  );
    
 
@@ -539,11 +525,11 @@ cache_V1b_T18b_8w_512E i_icache(
 				.clk(clk),
 				.rst_n(rst_n),
 				.address(inst_mem_rd_addr),
-				.wrdata_in(data_mem_wrdata),
-				.wr_cache(memwrite_ctrl),
+				.wrdata_in(32'h00000000),
+				.wr_cache(1'b0),
 				.rd_cache(1'b1),
 				.rd_data_o(instruction_i),
-				.cache_miss(cache_miss),
+				.cache_miss(cache_miss_icache),
 				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_icache),
 				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_icache),
 				.l2_mem_access_addr(l2_mem_access_addr_icache),
@@ -564,7 +550,7 @@ cache_V1b_T18b_8w_512E i_dcache(
 				.wr_cache(memwrite_ctrl),
 				.rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
 				.rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
-				.cache_miss(cache_miss),
+				.cache_miss(cache_miss_dcache),
 				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_dcache),
 				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_dcache),
 				.l2_mem_access_addr(l2_mem_access_addr_dcache),

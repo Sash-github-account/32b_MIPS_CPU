@@ -20,7 +20,7 @@ module cache_miss_handler(
    //******** Wires *******//
    logic [2:0] 					  rd_tr_cntr;
    logic [31:0] 				  rd_data_buf[0:7];
-   logic 					  upd_entry_prev;
+   logic 					  upd_entry;
    //******** Wires *******//
    
 
@@ -31,18 +31,16 @@ module cache_miss_handler(
    assign upd_entry_tag_vld = {1'b1, miss_addr[31:14]};   
    //******* Logic *********// 
    
-
    always@(posedge clk) begin
       if(!rst_n) begin
 	 upd_entry <= 1'b0;
-	 upd_entry_prev <= 1'b0;
       end
       else begin
 	 upd_entry <= (rd_tr_cntr == 3'b111);
-	 upd_entry_prev <= upd_entry; 
       end // else: !if(!rst_n)
    end // always@ (posedge clk)
    
+
 
    always@(posedge clk) begin
       if(!rst_n) begin
@@ -51,6 +49,9 @@ module cache_miss_handler(
       else begin
 	 if(rd_en & l2_bus_arbiter_rd_granted) begin
 	    rd_tr_cntr <= rd_tr_cntr + 3'h1; 
+	 end
+	 else if(rd_en & !l2_bus_arbiter_rd_granted) begin
+	    rd_tr_cntr <= rd_tr_cntr; 
 	 end
 	 else rd_tr_cntr <= 3'h0;
       end // else: !if(!rst_n)
@@ -80,7 +81,6 @@ module cache_miss_handler(
       if(!rst_n) begin
 	 rd_en <= 1'b0;
 	 l2_mem_wr_en <= 1'b0;
-	 //l2_mem_access_addr <= 32'h00000000;
 	 l2_mem_wr_data <= 32'h000000000;
       end
       else begin
@@ -90,12 +90,10 @@ module cache_miss_handler(
 	    if(wr_miss & l2_bus_arbiter_wr_granted) begin
 	       l2_mem_wr_en <= 1'b1;
 	       l2_mem_wr_data <= wr_miss_data;
-	       //l2_mem_access_addr <= {2'b00, miss_addr[31:2]};
 	    end
 	    else begin
 	       l2_mem_wr_en <= 1'b0;
 	       l2_mem_wr_data <= 32'h00000000;
-	       //l2_mem_access_addr <= 32'h00000000;    
 	    end
 	 end
       end // else: !if(!rst_n)

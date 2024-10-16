@@ -7,12 +7,10 @@ module pc(
 	  input logic [31:0]  exception_vec_addr,
 	  input logic [31:0]  branch_address,
 	  input logic 	      br_ctrl_mux_sel,
-	  input logic 	      zero_alu,
 	  input logic 	      jump_ctrl,
 	  output logic [31:0] pc_plus_4,
 	  output logic [31:0] final_nxt_pc_mux,
-	  output logic [31:0] cur_pc,
-	  output logic 	      pc_halted
+	  output logic [31:0] cur_pc
 	  );
 
 
@@ -37,7 +35,6 @@ module pc(
    assign final_nxt_pc_mux = (load_exceptn_vec_addr) ? exception_vec_addr : jmp_or_pcp4_mux;
    //assign is_halt_pc = ((final_nxt_pc_mux >> 2) == HALT_PC);
    assign is_halt_pc = 0;
-   assign pc_halted = is_halt_pc;
    //************************//
 
 

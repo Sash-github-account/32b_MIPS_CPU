@@ -1,6 +1,4 @@
 module hazard_detection_unit(
-			     input logic       clk,
-			     input logic       rst_n,
 			     input logic       IDEX_memread_ctrl,
 			     input logic [4:0] IDEX_reg_rt,
 			     input logic [4:0] IFID_reg_rs,
@@ -27,17 +25,7 @@ module hazard_detection_unit(
    assign hazard_detected = hazard_detected_init;
    //******* Logic *********//
 
-   //******* gen hazard signal optional delay *******//
-   always_ff@(posedge clk) begin
-      if(!rst_n) begin
-	 haz_reg1 <= 0;
-	 haz_reg2 <= 0;
-      end
-      else begin
-	 haz_reg1 <= hazard_detected_init;
-	 haz_reg2 <= haz_reg1;
-      end
-   end
+
 endmodule // hazard_detection_unit
 
 

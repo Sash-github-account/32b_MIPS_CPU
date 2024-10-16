@@ -3,8 +3,7 @@ module alu(
 	   input logic [31:0]  op_2,
 	   input logic [3:0]   alu_ctrl,
 	   output logic [31:0] alu_result,
-	   output logic        arith_ovrflw_exceptn_detected,
-	   output logic        zero_alu
+	   output logic        arith_ovrflw_exceptn_detected
 	   );
 
 
@@ -16,7 +15,6 @@ module alu(
 
 
    //*********** ALU logic ************//
-   assign zero_alu = !(|alu_result);
    assign op_1_int = {1'b0, op_1};
    assign op_2_int = {1'b0, op_2};
    assign arith_ovrflw_exceptn_detected = alu_int[32];
