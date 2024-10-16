@@ -20,9 +20,12 @@
 *    -> L1 data Cache:
 *       -> 512 entries, 8 words per entry, 19 bit tag, valid flag
 *       -> write-through to L2 data memory: 16Kx32b
+*    -> L1 instruction Cache:
+*       -> 512 entries, 8 words per entry, 19 bit tag, valid flag
+*       -> write-through to L2 data memory: 16Kx32b
+*    -> Combined L2 block SRAM
+*        -> Data bus arbiter controlling icache vs dcache access to L2 Memory
 *     WIP:
 *         . super-scalar execution
-*         . JMP instruction
-*         . L1 instruction cache
 *         . extend 
 
