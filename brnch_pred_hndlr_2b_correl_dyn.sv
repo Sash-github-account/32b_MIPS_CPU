@@ -61,7 +61,7 @@ module brnch_pred_hndlr_2b_correl_dyn(
    assign regctrl_n_brnch_detect = (IDEX_regwrite_ctrl & branch_instr_detected_ID);
    assign branch_hazard_aluop =  regctrl_n_brnch_detect & IDEX_IFID_reg_comp;
    assign branch_hazard_ldop = regctrl_n_brnch_detect & (IDEX_alusrc_ctrl == 2'b01) & IDEX_memtoreg_ctrl & IDEX_memread_ctrl & IDEX_IFID_reg_comp;
-   assign branch_hazard_stall = (branch_hazard_aluop | branch_hazard_ldop) | branch_hazard_del;
+   assign branch_hazard_stall = (branch_hazard_aluop ) | branch_hazard_del; //| branch_hazard_ldop
 
    always_ff@(posedge clk) begin
       if(!rst_n) begin

@@ -99,7 +99,6 @@ module CPU_MIPS_32b_5stage(
    logic [31:0] 			       exception_vec_addr;
    logic 				       IF_flush;
    logic 				       cache_miss_icache;
-   logic 				       cache_miss_icache;
    logic 				       cache_miss_stall;
    logic [31:0] 			       l2_mem_access_addr_dcache;
    logic [31:0] 			       l2_mem_wr_data_dcache;
@@ -521,7 +520,7 @@ l2_mem_bus_arbiter i_l2_bus_arb(
 			  );
    
 
-cache_V1b_T18b_8w_512E i_icache(
+cache_set_associative_256sets_4blocks_4words i_icache(
 				.clk(clk),
 				.rst_n(rst_n),
 				.address(inst_mem_rd_addr),
@@ -542,7 +541,7 @@ cache_V1b_T18b_8w_512E i_icache(
 		       
 
    
-cache_V1b_T18b_8w_512E i_dcache(
+cache_set_associative_256sets_4blocks_4words i_dcache(
 				.clk(clk),
 				.rst_n(rst_n),
 				.address(data_mem_addr),

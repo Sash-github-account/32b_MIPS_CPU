@@ -39,7 +39,7 @@ module l2_mem_bus_arbiter(
    assign wr_req_icache_active = l2_mem_en_icache & l2_mem_wr_en_icache;
    assign wr_req_dcache_active = l2_mem_en_dcache & l2_mem_wr_en_dcache;   
    assign l2_mem_access_addr = (rd_grant_icache_active) ? l2_mem_access_addr_icache : (rd_grant_dcache_active) ? l2_mem_access_addr_dcache : 32'h00000000;
-   assign l2_mem_wr_data = (rd_grant_icache_active) ? l2_mem_wr_data_icache : l2_mem_wr_data_dcache;   
+   //assign l2_mem_wr_data = (rd_grant_icache_active) ? l2_mem_wr_data_icache : l2_mem_wr_data_dcache;   
    assign l2_mem_en = (rd_grant_icache_active) ? l2_mem_en_icache : (rd_grant_dcache_active) ? l2_mem_en_dcache : 1'b1;
    assign l2_mem_wr_en = (wr_grant_icache_active) ? l2_mem_wr_en_icache : (wr_grant_dcache_active) ? l2_mem_wr_en_dcache : 1'b0;
    assign l2_mem_wr_data = (rd_req_icache_active) ? l2_mem_wr_data_icache : (rd_req_dcache_active) ? l2_mem_wr_data_dcache : 32'h00000000;

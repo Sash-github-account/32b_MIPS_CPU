@@ -82,7 +82,7 @@ module cache_V1b_T18b_8w_512E(
    
    //********* Logic data_in *********//
    always@(posedge clk) begin
-      data_in = 275'h0;
+      data_in = 256'h0;
       case(blk_sel)
 	3'h0: data_in = {data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], wrdata_in};
 	3'h1: data_in = {data_word_out[7], data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], wrdata_in, data_word_out[0]};
@@ -92,7 +92,7 @@ module cache_V1b_T18b_8w_512E(
 	3'h5: data_in = {data_word_out[7], data_word_out[6], wrdata_in, data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
 	3'h6: data_in = {data_word_out[7], wrdata_in, data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
 	3'h7: data_in = {wrdata_in, data_word_out[6], data_word_out[5], data_word_out[4], data_word_out[3], data_word_out[2], data_word_out[1], data_word_out[0]};
-	default:  data_in = 274'h0;
+	default:  data_in = 256'h0;
       endcase
    end
    //********* Logic data_in *********//  
@@ -113,7 +113,7 @@ module cache_V1b_T18b_8w_512E(
 
    
    
-   //********* cache data memory *********//    
+   //********* cache valid/tag memory *********//    
      cache_vld_tag_sram i_cache_tag_vld_mem(
 					 .addra_vldtag_mem(cache_index_in),
 					 .clk(clk),
@@ -122,7 +122,7 @@ module cache_V1b_T18b_8w_512E(
 					 .wr_en(upd_entry),
 					 .dout({valid_out, tag_out})
 					 );  
-   //********* cache data memory *********//    
+   //********* cache valid/tag memory *********//    
 
 
    
