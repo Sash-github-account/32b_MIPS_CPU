@@ -18,10 +18,12 @@
 *       -> arithmetic overflow
 *       -> Undefined instruction detected
 *    -> L1 data Cache:
-*       -> 512 entries, 8 words per entry, 19 bit tag, valid flag
+*       -> 512 entries, 8 words per entry, 19 bit tag, valid flag  ---or---
+*       -> 256 sets, 4 block per set, 4 words per block, NMRU replacement - set associative cache
 *       -> write-through to L2 data memory: 16Kx32b
 *    -> L1 instruction Cache:
-*       -> 512 entries, 8 words per entry, 19 bit tag, valid flag
+*       -> 512 entries, 8 words per entry, 19 bit tag, valid flag ---or---
+*       -> 256 sets, 4 block per set, 4 words per block, NMRU replacement - set associative cache
 *       -> write-through to L2 data memory: 16Kx32b
 *    -> Combined L2 block SRAM
 *        -> Data bus arbiter controlling icache vs dcache access to L2 Memory
