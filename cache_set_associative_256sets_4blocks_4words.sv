@@ -23,10 +23,10 @@ module cache_set_associative_256sets_4blocks_4words(
    logic 								valid_out_blk_1;
    logic 								valid_out_blk_2;
    logic 								valid_out_blk_3;
-   logic [18:0] 							tag_out_0;
-   logic [18:0] 							tag_out_1;
-   logic [18:0] 							tag_out_2;
-   logic [18:0] 							tag_out_3;
+   logic [19:0] 							tag_out_0;
+   logic [19:0] 							tag_out_1;
+   logic [19:0] 							tag_out_2;
+   logic [19:0] 							tag_out_3;
    logic [31:0] 							data_word_out[0:3];
    logic [127:0] 							data_out_blk_0;
    logic [127:0] 							data_out_blk_1;
@@ -36,7 +36,7 @@ module cache_set_associative_256sets_4blocks_4words(
    logic [127:0] 							wr_entry_final;
    logic [1:0] 								blk_sel;
    logic [7:0] 								cache_index_in;
-   logic [18:0] 							tag_in;
+   logic [19:0] 							tag_in;
    logic 								tag_in_out_comp;
    logic 								rd_cache_hit;
    logic 								wr_cache_hit;
@@ -49,13 +49,13 @@ module cache_set_associative_256sets_4blocks_4words(
    logic 								upd_entry_blk_2;
    logic 								upd_entry_blk_3;
    logic 								rd_en;
-   logic 								cache_mem_wr_en;
+//   logic 								cache_mem_wr_en;
    logic 								cache_mem_wr_en_blk_0;
       logic 								cache_mem_wr_en_blk_1;
       logic 								cache_mem_wr_en_blk_2;
       logic 								cache_mem_wr_en_blk_3;
    logic 								tag_com_and_cache_ln_vld;
-   logic [19:0] 							tag_n_vld_wr_dt;
+   logic [20:0] 							tag_n_vld_wr_dt;
    logic [1:0] 								cur_recently_used_blk;
    logic [1:0] 								new_recently_used_blk;
    logic 								upd_lru;
@@ -67,8 +67,8 @@ module cache_set_associative_256sets_4blocks_4words(
 
    //********* Logic - cache hit/miss, L2 cache ctrls *********//
    assign valid_out = valid_out_blk_0 | valid_out_blk_1 | valid_out_blk_2 | valid_out_blk_3;
-   assign cache_index_in = address[12:5];
-   assign tag_in = address[31:13];
+   assign cache_index_in = address[11:4];
+   assign tag_in = address[31:12];
    assign blk_sel  = address[3:2];
    assign tag_in_out_comp = (tag_in == tag_out_0) | (tag_in == tag_out_1) | (tag_in == tag_out_2) | (tag_in == tag_out_3);
    assign tag_com_and_cache_ln_vld = tag_in_out_comp & valid_out;
@@ -79,7 +79,7 @@ module cache_set_associative_256sets_4blocks_4words(
    assign rd_cache_miss = !rd_cache_hit & rd_cache;
    assign l2_mem_en = rd_en | wr_cache;
    assign wr_entry_final = (upd_entry) ? entry_upd_val : data_in;
-   assign cache_mem_wr_en = wr_cache_hit | upd_entry;
+ //  assign cache_mem_wr_en = wr_cache_hit | upd_entry;
    assign upd_lru = rd_cache_hit | wr_cache_hit;
    assign hit_vector = {(valid_out_blk_0 & (tag_in == tag_out_0)), (valid_out_blk_1 & (tag_in == tag_out_1)), (valid_out_blk_2 & (tag_in == tag_out_2)), (valid_out_blk_3 & (tag_in == tag_out_3))};
    //********* Logic - cache hit/miss, L2 cache ctrls *********//
@@ -337,7 +337,7 @@ module cache_set_associative_256sets_4blocks_4words(
 					.addr(cache_index_in),
 					.clk(clk),
 					.data_in(wr_entry_final),
-					.wr_en(cache_mem_wr_en),
+					.wr_en(cache_mem_wr_en_blk_0),
 					.data_out(data_out_blk_0)
 					);
 
@@ -345,7 +345,7 @@ module cache_set_associative_256sets_4blocks_4words(
 					.addr(cache_index_in),
 					.clk(clk),
 					.data_in(wr_entry_final),
-					.wr_en(cache_mem_wr_en),
+					.wr_en(cache_mem_wr_en_blk_1),
 					.data_out(data_out_blk_1)
 					);
 
@@ -353,7 +353,7 @@ module cache_set_associative_256sets_4blocks_4words(
 					.addr(cache_index_in),
 					.clk(clk),
 					.data_in(wr_entry_final),
-					.wr_en(cache_mem_wr_en),
+					.wr_en(cache_mem_wr_en_blk_2),
 					.data_out(data_out_blk_2)
 					);
 
@@ -361,7 +361,7 @@ module cache_set_associative_256sets_4blocks_4words(
 					.addr(cache_index_in),
 					.clk(clk),
 					.data_in(wr_entry_final),
-					.wr_en(cache_mem_wr_en),
+					.wr_en(cache_mem_wr_en_blk_3),
 					.data_out(data_out_blk_3)
 					); 
    //********* cache data memory *********//    

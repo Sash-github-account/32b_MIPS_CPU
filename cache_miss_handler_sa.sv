@@ -12,7 +12,7 @@ module cache_miss_handler_sa(
 			     input logic 	  l2_bus_arbiter_wr_granted,
 			     output logic [127:0] upd_data_entry,
 			     output logic 	  upd_entry,
-			     output logic [19:0]  upd_entry_tag_vld,
+			     output logic [20:0]  upd_entry_tag_vld,
 			     output logic [31:0]  l2_mem_wr_data,
 			     output logic 	  l2_mem_wr_en,
 			     input logic [1:0] 	  cur_recently_used_blk,
@@ -20,7 +20,7 @@ module cache_miss_handler_sa(
 			     );
 
    //******** Wires *******//
-   logic [1:0] 					  rd_tr_cntr;
+   logic [2:0] 					  rd_tr_cntr;
    logic [31:0] 				  rd_data_buf[0:3];
    logic 					  upd_entry;
    //******** Wires *******//
@@ -28,9 +28,9 @@ module cache_miss_handler_sa(
 
 
    //******* Logic *********//
-   assign l2_mem_access_addr = {2'b00, miss_addr[31:4], rd_tr_cntr};
-   assign upd_data_entry = {rd_data_buf[3], rd_data_buf[2], rd_data_buf[1], rd_data_buf[0]};
-   assign upd_entry_tag_vld = {1'b1, miss_addr[31:13]};
+   assign l2_mem_access_addr = {2'b00, miss_addr[31:4], rd_tr_cntr[1:0]};
+   assign upd_data_entry = {rd_data_buf[0], rd_data_buf[1], rd_data_buf[2], rd_data_buf[3]};
+   assign upd_entry_tag_vld = {1'b1, miss_addr[31:12]};
    assign blk_chosen_for_upd = cur_recently_used_blk + 2'b01;
    //******* Logic *********// 
    
@@ -39,7 +39,7 @@ module cache_miss_handler_sa(
 	 upd_entry <= 1'b0;
       end
       else begin
-	 upd_entry <= (rd_tr_cntr == 2'b11);
+	 upd_entry <= (rd_tr_cntr == 3'b100);
       end // else: !if(!rst_n)
    end // always@ (posedge clk)
    
@@ -47,16 +47,16 @@ module cache_miss_handler_sa(
 
    always@(posedge clk) begin
       if(!rst_n) begin
-	 rd_tr_cntr <= 2'b00;
+	 rd_tr_cntr <= 3'b000;
       end
       else begin
 	 if(rd_en & l2_bus_arbiter_rd_granted) begin
-	    rd_tr_cntr <= rd_tr_cntr + 2'h1; 
+	    rd_tr_cntr <= rd_tr_cntr + 3'h1; 
 	 end
 	 else if(rd_en & !l2_bus_arbiter_rd_granted) begin
 	    rd_tr_cntr <= rd_tr_cntr; 
 	 end
-	 else rd_tr_cntr <= 2'h0;
+	 else rd_tr_cntr <= 3'h0;
       end // else: !if(!rst_n)
    end // always@ (posedge clk)
    

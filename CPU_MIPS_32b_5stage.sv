@@ -6,118 +6,118 @@
  `include "registers.sv"*/
 
 module CPU_MIPS_32b_5stage(
-			   input logic 	       clk,
-			   input logic 	       rst_n_async,
+			   input logic 	      clk,
+			   input logic 	      rst_n_async,
 			   //input logic [31:0]  instruction_i, 
-			   output logic [0:7]  LED_o
+			   output logic [0:7] LED_o
 			   );
 
 
    //**********Declarations*************//
-   localparam [31:0] INSTR_FOR_LED_OUT = 3;
-   logic 				       memread_ctrl;
-   logic [4:0] 				       write_register_in_mux;
-   logic [31:0] 			       reg_write_data_mux;
-   logic [31:0] 			       alu_result;
-   logic [1:0] 				       aluop_ctrl;
-   logic [3:0] 				       alu_ctrl;
-   logic 				       alusrc_ctrl;
-   logic 				       memtoreg_ctrl;
-   logic 				       regdst_ctrl; 
-   logic [31:0] 			       read_data_1;
-   logic [31:0] 			       read_data_2;
-   logic [31:0] 			       read_data_1_in_to_alu;
-   logic [31:0] 			       read_data_2_in_to_alu;
-   logic [31:0] 			       alu_op_2_mux;
-   logic [31:0] 			       br_instr_offset_sign_extd;
-   logic [31:0] 			       instruction;
-   logic [31:0] 			       data_mem_addr;
-   logic [31:0] 			       data_mem_wrdata;
-   logic [31:0] 			       inst_mem_rd_addr;
-   logic [31:0] 			       data_mem_rd_data;
-   logic 				       led_load;
-   logic [7:0] 				       reg_led_o;
-   logic 				       pc_halted;
-   logic 				       jump_ctrl;  
-   logic 				       jump_detected;
-   logic 				       branch_ctrl;   
-   logic 				       memwrite_ctrl;   
-   logic 				       regwrite_ctrl;   
-   logic [31:0] 			       branch_address;
-   logic [1:0] 				       forward_a;
-   logic [1:0] 				       forward_b;
-   logic 				       hazard_detected;
-   logic 				       branch_hazard_stall;
-   logic 				       branch_taken_IF_flush;
-   logic [4:0] 				       write_register_in_mux_to_EXMEM_pipe;
-   logic [31:0] 			       br_instr_offset_sign_extd_to_IDEX_pipe;
-   logic [31:0] 			       data_mem_wrdata_to_EXMEM_pipe;
-   logic [31:0] 			       pc_plus_4_to_IFID_pipe;
-   logic [31:0] 			       pc_plus_4_to_IDEX_pipe;
-   logic [31:0] 			       read_data_1_to_IDEX_pipe;
-   logic [31:0] 			       read_data_2_to_IDEX_pipe; 
-   logic [1:0] 				       aluop_ctrl_to_IDEX_pipe;
-   logic 				       regdst_ctrl_to_IDEX_pipe;
-   logic 				       jump_ctrl_to_IDEX_pipe;
-   logic 				       branch_ctrl_to_IDEX_pipe;
-   logic 				       memread_ctrl_to_IDEX_pipe;
-   logic 				       memwrite_ctrl_to_IDEX_pipe;
-   logic 				       memtoreg_ctrl_to_IDEX_pipe;
-   logic 				       alusrc_ctrl_to_IDEX_pipe;
-   logic 				       regwrite_ctrl_to_IDEX_pipe;
-   logic [4:0] 				       instruction_25_21;
-   logic [4:0] 				       instruction_15_11;
-   logic [4:0] 				       instruction_20_16;
-   logic [4:0] 				       reg_rs_from_IDEX;
-   logic [4:0] 				       reg_rd_from_IDEX;
-   logic [4:0] 				       reg_rt_from_IDEX;
-   logic [5:0] 				       instruction_5_0; 
-   logic [31:0] 			       pc_plus_4;
-   logic 				       jump_ctrl_to_EXMEM_pipe    ;
-   logic 				       branch_ctrl_to_EXMEM_pipe  ;
-   logic 				       memread_ctrl_to_EXMEM_pipe ;
-   logic 				       memwrite_ctrl_to_EXMEM_pipe;
-   logic 				       memtoreg_ctrl_to_EXMEM_pipe;
-   logic 				       regwrite_ctrl_to_EXMEM_pipe;
-   logic [31:0] 			       alu_result_to_EXMEM_pipe;
-   logic [4:0] 				       write_register_in_mux_to_MEMWB_pipe;
-   logic [31:0] 			       alu_result_to_MEMWB_pipe;
-   logic [31:0] 			       data_mem_rd_data_to_MEMWB_pipe;   
-   logic 				       memtoreg_ctrl_to_MEMWB_pipe;
-   logic 				       regwrite_ctrl_to_MEMWB_pipe;
-   logic [31:0] 			       br_instr_offset_sign_extdt_shft_l_2;
-   logic [31:0] 			       branch_address_to_EXMEM_pipe;
-   logic 				       cpu_ctrl_stall;
-   logic 				       br_prediction;
-   logic [31:0] 			       br_instr_offset_sign_extd_to_IDEX_pipe_choose;
-   logic [31:0] 			       br_instr_offset_sign_extd_to_IFID_pipe;   
-   logic 				       arith_ovrflw_exceptn_detected;
-   logic 				       decode_exception_detected;
-   logic 				       exceptn_flush_ID_stg;
-   logic 				       excceptn_flush_EX_stg;
-   logic 				       load_exceptn_vec_addr;
-   logic [31:0] 			       exception_vec_addr;
-   logic 				       IF_flush;
-   logic 				       cache_miss_icache;
-   logic 				       cache_miss_stall;
-   logic [31:0] 			       l2_mem_access_addr_dcache;
-   logic [31:0] 			       l2_mem_wr_data_dcache;
-   logic [31:0] 			       l2_mem_rd_data_dcache;
-   logic 				       l2_mem_wr_en_dcache;  
-   logic 				       l2_mem_en_dcache;   
-   logic [31:0] 			       l2_mem_access_addr_icache;
-   logic [31:0] 			       l2_mem_wr_data_icache;
-   logic [31:0] 			       l2_mem_rd_data_icache;
-   logic 				       l2_mem_wr_en_icache;  
-   logic 				       l2_mem_en_icache;
-   logic [31:0] 			       l2_mem_access_addr;
-   logic [31:0] 			       l2_mem_wr_data;
-   logic [31:0] 			       l2_mem_rd_data;
-   logic 				       l2_mem_wr_en;  
-   logic 				       l2_mem_en;
-   logic [31:0] 			       instruction_i;
-   logic 				       l2_bus_arbiter_rd_granted_icache;
-   logic 				       l2_bus_arbiter_rd_granted_dcache;
+  localparam [31:0] INSTR_FOR_LED_OUT = 3;
+   logic 				      memread_ctrl;
+   logic [4:0] 				      write_register_in_mux;
+   logic [31:0] 			      reg_write_data_mux;
+   logic [31:0] 			      alu_result;
+   logic [1:0] 				      aluop_ctrl;
+   logic [3:0] 				      alu_ctrl;
+   logic 				      alusrc_ctrl;
+   logic 				      memtoreg_ctrl;
+   logic 				      regdst_ctrl; 
+   logic [31:0] 			      read_data_1;
+   logic [31:0] 			      read_data_2;
+   logic [31:0] 			      read_data_1_in_to_alu;
+   logic [31:0] 			      read_data_2_in_to_alu;
+   logic [31:0] 			      alu_op_2_mux;
+   logic [31:0] 			      br_instr_offset_sign_extd;
+   logic [31:0] 			      instruction;
+   logic [31:0] 			      data_mem_addr;
+   logic [31:0] 			      data_mem_wrdata;
+   logic [31:0] 			      inst_mem_rd_addr;
+   logic [31:0] 			      data_mem_rd_data;
+   logic 				      led_load;
+   logic [7:0] 				      reg_led_o;
+   logic 				      pc_halted;
+   logic 				      jump_ctrl;  
+   logic 				      jump_detected;
+   logic 				      branch_ctrl;   
+   logic 				      memwrite_ctrl;   
+   logic 				      regwrite_ctrl;   
+   logic [31:0] 			      branch_address;
+   logic [1:0] 				      forward_a;
+   logic [1:0] 				      forward_b;
+   logic 				      hazard_detected;
+   logic 				      branch_hazard_stall;
+   logic 				      branch_taken_IF_flush;
+   logic [4:0] 				      write_register_in_mux_to_EXMEM_pipe;
+   logic [31:0] 			      br_instr_offset_sign_extd_to_IDEX_pipe;
+   logic [31:0] 			      data_mem_wrdata_to_EXMEM_pipe;
+   logic [31:0] 			      pc_plus_4_to_IFID_pipe;
+   logic [31:0] 			      pc_plus_4_to_IDEX_pipe;
+   logic [31:0] 			      read_data_1_to_IDEX_pipe;
+   logic [31:0] 			      read_data_2_to_IDEX_pipe; 
+   logic [1:0] 				      aluop_ctrl_to_IDEX_pipe;
+   logic 				      regdst_ctrl_to_IDEX_pipe;
+   logic 				      jump_ctrl_to_IDEX_pipe;
+   logic 				      branch_ctrl_to_IDEX_pipe;
+   logic 				      memread_ctrl_to_IDEX_pipe;
+   logic 				      memwrite_ctrl_to_IDEX_pipe;
+   logic 				      memtoreg_ctrl_to_IDEX_pipe;
+   logic 				      alusrc_ctrl_to_IDEX_pipe;
+   logic 				      regwrite_ctrl_to_IDEX_pipe;
+   logic [4:0] 				      instruction_25_21;
+   logic [4:0] 				      instruction_15_11;
+   logic [4:0] 				      instruction_20_16;
+   logic [4:0] 				      reg_rs_from_IDEX;
+   logic [4:0] 				      reg_rd_from_IDEX;
+   logic [4:0] 				      reg_rt_from_IDEX;
+   logic [5:0] 				      instruction_5_0; 
+   logic [31:0] 			      pc_plus_4;
+   logic 				      jump_ctrl_to_EXMEM_pipe    ;
+   logic 				      branch_ctrl_to_EXMEM_pipe  ;
+   logic 				      memread_ctrl_to_EXMEM_pipe ;
+   logic 				      memwrite_ctrl_to_EXMEM_pipe;
+   logic 				      memtoreg_ctrl_to_EXMEM_pipe;
+   logic 				      regwrite_ctrl_to_EXMEM_pipe;
+   logic [31:0] 			      alu_result_to_EXMEM_pipe;
+   logic [4:0] 				      write_register_in_mux_to_MEMWB_pipe;
+   logic [31:0] 			      alu_result_to_MEMWB_pipe;
+   logic [31:0] 			      data_mem_rd_data_to_MEMWB_pipe;   
+   logic 				      memtoreg_ctrl_to_MEMWB_pipe;
+   logic 				      regwrite_ctrl_to_MEMWB_pipe;
+   logic [31:0] 			      br_instr_offset_sign_extdt_shft_l_2;
+   logic [31:0] 			      branch_address_to_EXMEM_pipe;
+   logic 				      cpu_ctrl_stall;
+   logic 				      br_prediction;
+   logic [31:0] 			      br_instr_offset_sign_extd_to_IDEX_pipe_choose;
+   logic [31:0] 			      br_instr_offset_sign_extd_to_IFID_pipe;   
+   logic 				      arith_ovrflw_exceptn_detected;
+   logic 				      decode_exception_detected;
+   logic 				      exceptn_flush_ID_stg;
+   logic 				      excceptn_flush_EX_stg;
+   logic 				      load_exceptn_vec_addr;
+   logic [31:0] 			      exception_vec_addr;
+   logic 				      IF_flush;
+   logic 				      cache_miss_icache;
+   logic 				      cache_miss_stall;
+   logic [31:0] 			      l2_mem_access_addr_dcache;
+   logic [31:0] 			      l2_mem_wr_data_dcache;
+   logic [31:0] 			      l2_mem_rd_data_dcache;
+   logic 				      l2_mem_wr_en_dcache;  
+   logic 				      l2_mem_en_dcache;   
+   logic [31:0] 			      l2_mem_access_addr_icache;
+   logic [31:0] 			      l2_mem_wr_data_icache;
+   logic [31:0] 			      l2_mem_rd_data_icache;
+   logic 				      l2_mem_wr_en_icache;  
+   logic 				      l2_mem_en_icache;
+   logic [31:0] 			      l2_mem_access_addr;
+   logic [31:0] 			      l2_mem_wr_data;
+   logic [31:0] 			      l2_mem_rd_data;
+   logic 				      l2_mem_wr_en;  
+   logic 				      l2_mem_en;
+   logic [31:0] 			      instruction_i;
+   logic 				      l2_bus_arbiter_rd_granted_icache;
+   logic 				      l2_bus_arbiter_rd_granted_dcache;
    
    //***********************************//
 
@@ -125,14 +125,14 @@ module CPU_MIPS_32b_5stage(
 
 
    //************** Comb logic ***************//
-   assign write_register_in_mux_to_EXMEM_pipe = (regdst_ctrl) ? instruction_15_11 : instruction_20_16;
+  assign write_register_in_mux_to_EXMEM_pipe = (regdst_ctrl) ? instruction_15_11 : instruction_20_16;
    assign reg_write_data_mux = (memtoreg_ctrl) ? data_mem_rd_data : alu_result;
    //assign reg_write_data_mux = (memtoreg_ctrl_to_MEMWB_pipe) ? data_mem_rd_data_to_MEMWB_pipe : alu_result_to_MEMWB_pipe;
    assign br_instr_offset_sign_extd_to_IFID_pipe = (instruction_i[15]) ? {16'hffff,instruction_i[15:0]} : {16'h0000,instruction_i[15:0]};
    assign br_instr_offset_sign_extd_to_IDEX_pipe_choose = (instruction[15]) ? {16'hffff,instruction[15:0]} : {16'h0000,instruction[15:0]};
    assign br_instr_offset_sign_extd_to_IDEX_pipe = (br_prediction & !cpu_ctrl_stall) ? br_instr_offset_sign_extd_to_IFID_pipe : br_instr_offset_sign_extd_to_IDEX_pipe_choose;
    assign alu_op_2_mux = (alusrc_ctrl) ? br_instr_offset_sign_extd : read_data_2_in_to_alu;
-   assign data_mem_addr = alu_result_to_MEMWB_pipe << 2;
+   assign data_mem_addr = alu_result_to_MEMWB_pipe;// << 2;
    assign data_mem_wrdata_to_EXMEM_pipe = read_data_2_in_to_alu;
    assign led_load = (inst_mem_rd_addr == INSTR_FOR_LED_OUT) ? 1'b1:1'b0;
    assign IF_flush = branch_taken_IF_flush;
@@ -180,7 +180,7 @@ module CPU_MIPS_32b_5stage(
 	 memwrite_ctrl_to_EXMEM_pipe <= 0;
 	 memtoreg_ctrl_to_EXMEM_pipe <= 0;
 	 alusrc_ctrl<= 32'b0;  
-	 regwrite_ctrl_to_EXMEM_pipe <= 32'b0; 
+	 regwrite_ctrl_to_EXMEM_pipe <= 1'b0; 
 	 instruction_25_21 <= 5'h0; 
 	 instruction_15_11 <= 5'h0;
 	 instruction_20_16 <= 5'h0;
@@ -203,7 +203,7 @@ module CPU_MIPS_32b_5stage(
 	       memwrite_ctrl_to_EXMEM_pipe <= 0;
 	       memtoreg_ctrl_to_EXMEM_pipe <= 0;
 	       alusrc_ctrl<= 32'b0;  
-	       regwrite_ctrl_to_EXMEM_pipe <= 32'b0; 
+	       regwrite_ctrl_to_EXMEM_pipe <= 1'b0; 
 	       instruction_25_21 <= 5'h0; 
 	       instruction_15_11 <= 5'h0;
 	       instruction_20_16 <= 5'h0;
@@ -479,14 +479,14 @@ module CPU_MIPS_32b_5stage(
    //	.clock(clk),
    //	.q(instruction));	
    
-//data_ram i_data_ram(
-//		       .address(data_mem_addr[5:0]),
-//		       .clock(clk),
-//		       .data(data_mem_wrdata),
-//		       .wren(memwrite_ctrl),
-//		       .q(data_mem_rd_data_to_MEMWB_pipe));
-	
- design_1 i_data_ram(
+   //data_ram i_data_ram(
+   //		       .address(data_mem_addr[5:0]),
+   //		       .clock(clk),
+   //		       .data(data_mem_wrdata),
+   //		       .wren(memwrite_ctrl),
+   //		       .q(data_mem_rd_data_to_MEMWB_pipe));
+   
+   design_1 i_data_ram(
 		       .addra(l2_mem_access_addr),
 		       .clka(clk),
 		       .dina(l2_mem_wr_data),
@@ -495,71 +495,71 @@ module CPU_MIPS_32b_5stage(
 		       .douta(l2_mem_rd_data));  
 
 
-l2_mem_bus_arbiter i_l2_bus_arb(
-			  .clk(clk),
-			  .rst_n(rst_n),
-			  .l2_mem_access_addr_dcache(l2_mem_access_addr_dcache),
-			  .l2_mem_wr_data_dcache(l2_mem_wr_data_dcache),
-			  .l2_mem_rd_data_dcache(l2_mem_rd_data_dcache),
-			  .l2_mem_wr_en_dcache(l2_mem_wr_en_dcache), 
-			  .l2_mem_en_dcache(l2_mem_en_dcache), 
-			  .l2_mem_access_addr_icache(l2_mem_access_addr_icache),
-			  .l2_mem_wr_data_icache(l2_mem_wr_data_icache),
-			  .l2_mem_rd_data_icache(l2_mem_rd_data_icache),
-			  .l2_mem_wr_en_icache(l2_mem_wr_en_icache), 
-			  .l2_mem_en_icache(l2_mem_en_icache),
-			  .l2_mem_access_addr(l2_mem_access_addr),
-			  .l2_mem_wr_data(l2_mem_wr_data),
-			  .l2_mem_rd_data(l2_mem_rd_data),
-			  .l2_mem_wr_en(l2_mem_wr_en),
-			  .l2_mem_en(l2_mem_en),
-			  .rd_grant_icache_active(l2_bus_arbiter_rd_granted_icache),
-			  .rd_grant_dcache_active(l2_bus_arbiter_rd_granted_dcache),
-			  .wr_grant_icache_active(l2_bus_arbiter_wr_granted_icache),
-			  .wr_grant_dcache_active(l2_bus_arbiter_wr_granted_dcache)
-			  );
+   l2_mem_bus_arbiter i_l2_bus_arb(
+				   .clk(clk),
+				   .rst_n(rst_n),
+				   .l2_mem_access_addr_dcache(l2_mem_access_addr_dcache),
+				   .l2_mem_wr_data_dcache(l2_mem_wr_data_dcache),
+				   .l2_mem_rd_data_dcache(l2_mem_rd_data_dcache),
+				   .l2_mem_wr_en_dcache(l2_mem_wr_en_dcache), 
+				   .l2_mem_en_dcache(l2_mem_en_dcache), 
+				   .l2_mem_access_addr_icache(l2_mem_access_addr_icache),
+				   .l2_mem_wr_data_icache(l2_mem_wr_data_icache),
+				   .l2_mem_rd_data_icache(l2_mem_rd_data_icache),
+				   .l2_mem_wr_en_icache(l2_mem_wr_en_icache), 
+				   .l2_mem_en_icache(l2_mem_en_icache),
+				   .l2_mem_access_addr(l2_mem_access_addr),
+				   .l2_mem_wr_data(l2_mem_wr_data),
+				   .l2_mem_rd_data(l2_mem_rd_data),
+				   .l2_mem_wr_en(l2_mem_wr_en),
+				   .l2_mem_en(l2_mem_en),
+				   .rd_grant_icache_active(l2_bus_arbiter_rd_granted_icache),
+				   .rd_grant_dcache_active(l2_bus_arbiter_rd_granted_dcache),
+				   .wr_grant_icache_active(l2_bus_arbiter_wr_granted_icache),
+				   .wr_grant_dcache_active(l2_bus_arbiter_wr_granted_dcache)
+				   );
    
 
-cache_set_associative_256sets_4blocks_4words i_icache(
-				.clk(clk),
-				.rst_n(rst_n),
-				.address(inst_mem_rd_addr),
-				.wrdata_in(32'h00000000),
-				.wr_cache(1'b0),
-				.rd_cache(1'b1),
-				.rd_data_o(instruction_i),
-				.cache_miss(cache_miss_icache),
-				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_icache),
-				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_icache),
-				.l2_mem_access_addr(l2_mem_access_addr_icache),
-				.l2_mem_wr_data    (l2_mem_wr_data_icache),
-				.l2_mem_rd_data     (l2_mem_rd_data_icache),
-				.l2_mem_en              (l2_mem_en_icache),
- 				.l2_mem_wr_en (l2_mem_wr_en_icache)
-				);
-
-		       
+   cache_set_associative_256sets_4blocks_4words i_icache(
+							 .clk(clk),
+							 .rst_n(rst_n),
+							 .address(inst_mem_rd_addr),
+							 .wrdata_in(32'h00000000),
+							 .wr_cache(1'b0),
+							 .rd_cache(1'b1),
+							 .rd_data_o(instruction_i),
+							 .cache_miss(cache_miss_icache),
+							 .l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_icache),
+							 .l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_icache),
+							 .l2_mem_access_addr(l2_mem_access_addr_icache),
+							 .l2_mem_wr_data    (l2_mem_wr_data_icache),
+							 .l2_mem_rd_data     (l2_mem_rd_data_icache),
+							 .l2_mem_en              (l2_mem_en_icache),
+ 							 .l2_mem_wr_en (l2_mem_wr_en_icache)
+							 );
 
    
-cache_set_associative_256sets_4blocks_4words i_dcache(
-				.clk(clk),
-				.rst_n(rst_n),
-				.address(data_mem_addr),
-				.wrdata_in(data_mem_wrdata),
-				.wr_cache(memwrite_ctrl),
-				.rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
-				.rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
-				.cache_miss(cache_miss_dcache),
-				.l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_dcache),
-				.l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_dcache),
-				.l2_mem_access_addr(l2_mem_access_addr_dcache),
-				.l2_mem_wr_data    (l2_mem_wr_data_dcache),
-				.l2_mem_rd_data     (l2_mem_rd_data_dcache),
-				.l2_mem_en              (l2_mem_en_dcache),
- 				.l2_mem_wr_en (l2_mem_wr_en_dcache)
-				);
 
-		       
+   
+   cache_set_associative_256sets_4blocks_4words i_dcache(
+							 .clk(clk),
+							 .rst_n(rst_n),
+							 .address(data_mem_addr),
+							 .wrdata_in(data_mem_wrdata),
+							 .wr_cache(memwrite_ctrl),
+							 .rd_cache(memtoreg_ctrl_to_MEMWB_pipe),
+							 .rd_data_o(data_mem_rd_data_to_MEMWB_pipe),
+							 .cache_miss(cache_miss_dcache),
+							 .l2_bus_arbiter_rd_granted(l2_bus_arbiter_rd_granted_dcache),
+							 .l2_bus_arbiter_wr_granted(l2_bus_arbiter_wr_granted_dcache),
+							 .l2_mem_access_addr(l2_mem_access_addr_dcache),
+							 .l2_mem_wr_data    (l2_mem_wr_data_dcache),
+							 .l2_mem_rd_data     (l2_mem_rd_data_dcache),
+							 .l2_mem_en              (l2_mem_en_dcache),
+ 							 .l2_mem_wr_en (l2_mem_wr_en_dcache)
+							 );
+
+   
    blink i_blnk(
 		.clk(clk), // 50MHz input clock
 		.cnt_en(led_load),
