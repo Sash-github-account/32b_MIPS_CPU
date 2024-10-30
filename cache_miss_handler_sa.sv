@@ -68,7 +68,7 @@ module cache_miss_handler_sa(
 	 end
       end
       else begin
-	 if(rd_en) begin
+	 if(rd_en & l2_bus_arbiter_rd_granted) begin
 	    if(wr_miss & (rd_tr_cntr-1 == miss_addr[3:2]))begin
 	       rd_data_buf[rd_tr_cntr-1] <= wr_miss_data;
 	    end
@@ -90,7 +90,7 @@ module cache_miss_handler_sa(
 	 if((rd_miss|wr_miss) & !upd_entry) rd_en <= 1'b1;
 	 else begin 
 	    rd_en <= 1'b0;
-	    if(wr_miss & l2_bus_arbiter_wr_granted) begin
+	    if(wr_miss & (l2_bus_arbiter_wr_granted | l2_bus_arbiter_rd_granted)) begin
 	       l2_mem_wr_en <= 1'b1;
 	       l2_mem_wr_data <= wr_miss_data;
 	    end

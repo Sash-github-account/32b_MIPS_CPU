@@ -13,7 +13,9 @@ module cache_set_associative_256sets_4blocks_4words(
 						    output logic [31:0] l2_mem_wr_data,
 						    input logic [31:0] 	l2_mem_rd_data,
 						    output logic 	l2_mem_en,
-						    output logic 	l2_mem_wr_en
+						    output logic 	l2_mem_wr_en,
+						    output logic 	upd_entry,
+						    output logic 	wr_cache_hit
 						    );
 
    //========== Wires =============//
@@ -102,7 +104,7 @@ module cache_set_associative_256sets_4blocks_4words(
 
    
    //********* Logic data_in *********//
-   always@(posedge clk) begin
+   always@(*) begin
       data_in = 127'h0;
       case(blk_sel)
 	3'h0: data_in = {data_word_out[3], data_word_out[2], data_word_out[1], wrdata_in};

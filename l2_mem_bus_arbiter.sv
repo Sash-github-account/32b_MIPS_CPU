@@ -19,7 +19,11 @@ module l2_mem_bus_arbiter(
 			  output logic 	      rd_grant_icache_active,
 			  output logic 	      rd_grant_dcache_active,
 			  output logic 	      wr_grant_icache_active,
-			  output logic 	      wr_grant_dcache_active
+			  output logic 	      wr_grant_dcache_active,
+			  input logic 	      upd_entry_icache,
+ 			  input logic 	      upd_entry_dcache,
+			  input logic 	      dcache_wr_hit,
+			  input logic 	      icache_wr_hit
 			  );
    
    //********* Wires *********//
@@ -35,7 +39,7 @@ module l2_mem_bus_arbiter(
 
    //********* Combo-Logic *********//   
    assign rd_req_icache_active = l2_mem_en_icache & !l2_mem_wr_en_icache;
-   assign rd_req_dcache_active = l2_mem_en_dcache & !l2_mem_wr_en_dcache;
+   assign rd_req_dcache_active = (l2_mem_en_dcache & !l2_mem_wr_en_dcache) & !dcache_wr_hit;
    assign wr_req_icache_active = l2_mem_en_icache & l2_mem_wr_en_icache;
    assign wr_req_dcache_active = l2_mem_en_dcache & l2_mem_wr_en_dcache;   
    assign l2_mem_access_addr = (rd_grant_icache_active) ? l2_mem_access_addr_icache : (rd_grant_dcache_active) ? l2_mem_access_addr_dcache : 32'h00000000;
@@ -54,7 +58,7 @@ module l2_mem_bus_arbiter(
 	 grant_sel_reg <= 1'b0;
       end
       else begin
-	 if(update_arbiter_grant) grant_sel_reg <= !grant_sel_reg;	 
+	 if((upd_entry_icache | upd_entry_dcache)) grant_sel_reg <= !grant_sel_reg;	 
       end
    end
    //********* Grant-Logic *********//       
@@ -120,7 +124,23 @@ module l2_mem_bus_arbiter(
 	   rd_grant_icache_active = 1'b0;
 	   rd_grant_dcache_active = 1'b0;
 	   wr_grant_icache_active = grant_sel_reg;
-	   wr_grant_dcache_active = grant_sel_reg;
+	   wr_grant_dcache_active = !grant_sel_reg;
+	   update_arbiter_grant = 1'b1;
+	end
+
+	4'b0110: begin
+	   rd_grant_icache_active = 1'b0;
+	   rd_grant_dcache_active = grant_sel_reg;
+	   wr_grant_icache_active = !grant_sel_reg;
+	   wr_grant_dcache_active = 1'b0;
+	   update_arbiter_grant = 1'b1;
+	end
+
+	4'b1001: begin
+	   rd_grant_icache_active = grant_sel_reg;
+	   rd_grant_dcache_active = 1'b0;
+	   wr_grant_icache_active = 1'b0;
+	   wr_grant_dcache_active = !grant_sel_reg;
 	   update_arbiter_grant = 1'b1;
 	end
 	

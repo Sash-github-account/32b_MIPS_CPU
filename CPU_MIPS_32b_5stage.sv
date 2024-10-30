@@ -439,7 +439,7 @@ module CPU_MIPS_32b_5stage(
 			       .read_register_2(instruction[20:16]),
 			       .write_register(write_register_in_mux),
 			       .write_data(reg_write_data_mux),
-			       .regwrite_ctrl(regwrite_ctrl),
+			       .regwrite_ctrl(regwrite_ctrl & !cpu_ctrl_stall),
 			       .read_data_1_o(read_data_1_to_IDEX_pipe),
 			       .read_data_2_o(read_data_2_to_IDEX_pipe),
 			       .reg_led_o(reg_led_o)
@@ -490,7 +490,7 @@ module CPU_MIPS_32b_5stage(
 		       .addra(l2_mem_access_addr),
 		       .clka(clk),
 		       .dina(l2_mem_wr_data),
-		       .ena(l2_mem_en),//memwrite_ctrl),
+		       .ena(1'b1),//l2_mem_en),//memwrite_ctrl),
 		       .wea(l2_mem_wr_en),
 		       .douta(l2_mem_rd_data));  
 
@@ -516,7 +516,11 @@ module CPU_MIPS_32b_5stage(
 				   .rd_grant_icache_active(l2_bus_arbiter_rd_granted_icache),
 				   .rd_grant_dcache_active(l2_bus_arbiter_rd_granted_dcache),
 				   .wr_grant_icache_active(l2_bus_arbiter_wr_granted_icache),
-				   .wr_grant_dcache_active(l2_bus_arbiter_wr_granted_dcache)
+				   .wr_grant_dcache_active(l2_bus_arbiter_wr_granted_dcache),
+				   .upd_entry_icache(upd_entry_icache),
+				   .upd_entry_dcache(upd_entry_dcache),
+				   .dcache_wr_hit(dcache_wr_hit),
+				   .icache_wr_hit(icache_wr_hit)
 				   );
    
 
@@ -535,7 +539,9 @@ module CPU_MIPS_32b_5stage(
 							 .l2_mem_wr_data    (l2_mem_wr_data_icache),
 							 .l2_mem_rd_data     (l2_mem_rd_data_icache),
 							 .l2_mem_en              (l2_mem_en_icache),
- 							 .l2_mem_wr_en (l2_mem_wr_en_icache)
+ 							 .l2_mem_wr_en (l2_mem_wr_en_icache),
+							 .upd_entry(upd_entry_icache),
+							 .wr_cache_hit(icache_wr_hit)
 							 );
 
    
@@ -556,7 +562,9 @@ module CPU_MIPS_32b_5stage(
 							 .l2_mem_wr_data    (l2_mem_wr_data_dcache),
 							 .l2_mem_rd_data     (l2_mem_rd_data_dcache),
 							 .l2_mem_en              (l2_mem_en_dcache),
- 							 .l2_mem_wr_en (l2_mem_wr_en_dcache)
+ 							 .l2_mem_wr_en (l2_mem_wr_en_dcache),
+							 .upd_entry(upd_entry_dcache),
+							 .wr_cache_hit(dcache_wr_hit)
 							 );
 
    
